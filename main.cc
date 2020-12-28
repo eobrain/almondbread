@@ -19,10 +19,10 @@ namespace
 {
 
     constexpr int WINDOW_WIDTH = 1000;
-    constexpr float centerRe = -0.568;
+    constexpr float centerRe = -0.567;
     constexpr float centerIm = -0.567;
-    constexpr float width = 1;
-    constexpr int maxIterationCount = 1000;
+    constexpr float width = 0.0005;
+    constexpr int maxIterationCount = 1000000;
 
     array<int, WINDOW_WIDTH * WINDOW_WIDTH> dataBuf;
     array<int, WINDOW_WIDTH * WINDOW_WIDTH> smoothedBuf;
