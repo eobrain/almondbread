@@ -7,6 +7,9 @@
 #include <thread>
 #include <SDL2/SDL.h>
 
+#include <ColorSpace.h>
+#include <Conversion.h>
+
 using std::array;
 using std::complex;
 using std::cout;
@@ -21,8 +24,8 @@ namespace
     constexpr int WINDOW_WIDTH = 1000;
     constexpr float centerRe = -0.568;
     constexpr float centerIm = -0.567;
-    constexpr float width = 0.04;
-    const int n = 40;
+    constexpr float width = 1;
+    const int n = 10;
     constexpr int maxIterationCount = n * n * n;
 
     array<int, WINDOW_WIDTH * WINDOW_WIDTH> dataBuf;
@@ -76,12 +79,14 @@ namespace
         //int dx = iters - data(ix - 1, iy);
         //int dy = iters - data(ix, iy - 1);
 
-        Uint8 blue = (256 * iters / n) % 256;
-        Uint8 red = (256 * iters / (n * n)) % 256;
-        Uint8 green = (256 * iters / (n * n * n)) % 256;
+        //int hue = 128 - 256 * iters / maxFinite;
+        ColorSpace::Lab lab(100 * log(iters) / log(maxFinite), 100*log(iters)/log(maxFinite)-100, 0);
+        ColorSpace::Rgb rgb;
+        lab.To<ColorSpace::Rgb>(&rgb);
+
         //Uint8 blue = 256 - red;
         //cout << "red=" << (int)red << " blue=" << (int)blue << endl;
-        SDL_SetRenderDrawColor(renderer, red, green, blue, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer, rgb.r, rgb.g, rgb.b, SDL_ALPHA_OPAQUE);
     }
 
     int threadCount = thread::hardware_concurrency();
