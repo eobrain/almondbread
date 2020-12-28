@@ -22,14 +22,29 @@ namespace
     constexpr float centerRe = -0.568;
     constexpr float centerIm = -0.567;
     constexpr float width = 1;
-    constexpr int maxIterationCount = 5000;
+    constexpr int maxIterationCount = 1000;
 
     array<int, WINDOW_WIDTH * WINDOW_WIDTH> dataBuf;
+    array<int, WINDOW_WIDTH * WINDOW_WIDTH> smoothedBuf;
     int maxFinite = -1;
 
     inline int &data(int ix, int iy)
     {
         return dataBuf[ix + WINDOW_WIDTH * iy];
+    }
+
+    inline int &smoothed(int ix, int iy)
+    {
+        return smoothedBuf[ix + WINDOW_WIDTH * iy];
+    }
+
+    constexpr int CENTERWEIGHT = 4;
+
+    inline void smooth()
+    {
+        for (int ix = 1; ix < WINDOW_WIDTH - 1; ++ix)
+            for (int iy = 1; iy < WINDOW_WIDTH - 1; ++iy)
+                smoothed(ix, iy) = (CENTERWEIGHT * data(ix, iy) + data(ix + 1, iy) + data(ix - 1, iy) + data(ix, iy + 1) + data(ix, iy - 1)) / (CENTERWEIGHT + 4);
     }
 
     constexpr Uint8 clamp(int color)
@@ -66,19 +81,12 @@ namespace
     void setColor(SDL_Renderer *renderer, int ix, int iy)
     {
         //std::cout << "c=" << c << std::endl;
-        int iters = data(ix, iy);
+        int iters = smoothed(ix, iy);
         if (iters == maxIterationCount)
         {
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
             return;
         }
-        //int dx = iters - data(ix - 1, iy);
-        //int dy = iters - data(ix, iy - 1);
-
-        //int hue = 128 - 256 * iters / maxFinite;
-        //ColorSpace::Lab lab(100 * log(iters) / log(maxFinite), 100*log(iters)/log(maxFinite)-100, 0);
-        //ColorSpace::Rgb rgb;
-        //lab.To<ColorSpace::Rgb>(&rgb);
 
         Uint8 b = clamp(10 * log(iters));
         Uint8 g = clamp(10 * sqrt(iters));
@@ -119,14 +127,15 @@ int main(void)
     {
         thread.join();
     }
+    smooth();
 
     SDL_Init(SDL_INIT_VIDEO);
     SDL_CreateWindowAndRenderer(WINDOW_WIDTH, WINDOW_WIDTH, 0, &window, &renderer);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
-    for (int ix = 1; ix < WINDOW_WIDTH; ++ix)
+    for (int ix = 1; ix < WINDOW_WIDTH - 1; ++ix)
     {
-        for (int iy = 1; iy < WINDOW_WIDTH; ++iy)
+        for (int iy = 1; iy < WINDOW_WIDTH - 1; ++iy)
         {
             setColor(renderer, ix, iy);
             SDL_RenderDrawPoint(renderer, ix, iy);
