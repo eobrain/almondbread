@@ -8,11 +8,9 @@
 constexpr int WINDOW_WIDTH = 1000;
 constexpr float centerRe = -0.568;
 constexpr float centerIm = -0.567;
-constexpr float width = 0.004;
-constexpr int maxIterationCount = 10000;
-const int logMax = log(maxIterationCount);
-
-constexpr int MANY = -1;
+constexpr float width = 0.04;
+const int n = 30;
+constexpr int maxIterationCount = n * n * n;
 
 using std::array;
 using std::complex;
@@ -23,6 +21,7 @@ using std::flush;
 namespace
 {
     array<int, WINDOW_WIDTH * WINDOW_WIDTH> dataBuf;
+    int maxFinite = -1;
 
     inline int &data(int ix, int iy)
     {
@@ -42,10 +41,14 @@ namespace
             //std::cout << i << ": " << z << std::endl;
             if (std::abs(z) > 2)
             {
+                if (i > maxFinite)
+                {
+                    maxFinite = i;
+                }
                 return i;
             }
         }
-        return MANY;
+        return maxIterationCount;
     }
 
     int iterations(int ix, int iy)
@@ -60,15 +63,17 @@ namespace
     {
         //std::cout << "c=" << c << std::endl;
         int iters = data(ix, iy);
-        if (iters == MANY)
+        if (iters == maxIterationCount)
         {
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
             return;
         }
+        //int dx = iters - data(ix - 1, iy);
+        //int dy = iters - data(ix, iy - 1);
 
-        Uint8 red = clamp(256 * log(iters) / logMax);
-        Uint8 green = red;
-        Uint8 blue = red;
+        Uint8 blue = (256 * iters / n) % 256;
+        Uint8 red = (256 * iters / (n * n)) % 256;
+        Uint8 green = (256 * iters / (n * n * n)) % 256;
         //Uint8 blue = 256 - red;
         //cout << "red=" << (int)red << " blue=" << (int)blue << endl;
         SDL_SetRenderDrawColor(renderer, red, green, blue, SDL_ALPHA_OPAQUE);
@@ -109,12 +114,12 @@ int main(void)
         //cout << "\r" << 100 * ix / WINDOW_WIDTH << "%" << flush;
     }
     SDL_RenderPresent(renderer);
+    cout << "maxFinite=" << maxFinite << endl;
     while (1)
     {
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
             break;
     }
-    cout << endl;
     if (SDL_SaveBMP(SDL_GetWindowSurface(window), "mandelbrot.bmp") != 0)
     {
         // Error saving bitmap
