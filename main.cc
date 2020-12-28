@@ -1,7 +1,8 @@
 #include <stdlib.h>
 #include <complex>
 #include <iostream>
-#include <math.h> 
+#include <math.h>
+#include <array>
 #include <SDL2/SDL.h>
 
 constexpr int WINDOW_WIDTH = 1000;
@@ -11,8 +12,9 @@ constexpr float width = 0.004;
 constexpr int maxIterationCount = 10000;
 const int logMax = log(maxIterationCount);
 
+constexpr int MANY = -1;
 
-
+using std::array;
 using std::complex;
 using std::cout;
 using std::endl;
@@ -25,6 +27,8 @@ constexpr Uint8 clamp(int color)
 
 namespace
 {
+    array<int, WINDOW_WIDTH * WINDOW_WIDTH> data;
+
     int iterations(complex<float> c)
     {
         complex<float> z = 0;
@@ -37,23 +41,28 @@ namespace
                 return i;
             }
         }
-        return -1;
+        return MANY;
     }
 
-    void setColor(SDL_Renderer *renderer, int ix, int iy)
+    int iterations(int ix, int iy)
     {
         float cRe = width * (ix - WINDOW_WIDTH / 2) / WINDOW_WIDTH + centerRe;
         float cIm = width * (iy - WINDOW_WIDTH / 2) / WINDOW_WIDTH + centerIm;
         complex<float> c = {cRe, cIm};
+        return iterations(c);
+    }
+
+    void setColor(SDL_Renderer *renderer, int ix, int iy)
+    {
         //std::cout << "c=" << c << std::endl;
-        int iters = iterations(c);
-        if (iters == -1)
+        int iters = data[ix + WINDOW_WIDTH * iy];
+        if (iters == MANY)
         {
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
             return;
         }
 
-        Uint8 red = clamp(256*log(iters)/logMax);
+        Uint8 red = clamp(256 * log(iters) / logMax);
         Uint8 green = red;
         Uint8 blue = red;
         //Uint8 blue = 256 - red;
@@ -69,6 +78,17 @@ int main(void)
     SDL_Renderer *renderer;
     SDL_Window *window;
 
+    for (int ix = 0; ix < WINDOW_WIDTH; ++ix)
+    {
+        for (int iy = 0; iy < WINDOW_WIDTH; ++iy)
+        {
+            data[ix + WINDOW_WIDTH * iy] = iterations(ix, iy);
+        }
+        if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
+            break;
+        cout << "\r" << 100 * ix / WINDOW_WIDTH << "%" << flush;
+    }
+
     SDL_Init(SDL_INIT_VIDEO);
     SDL_CreateWindowAndRenderer(WINDOW_WIDTH, WINDOW_WIDTH, 0, &window, &renderer);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
@@ -82,7 +102,7 @@ int main(void)
         }
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
             break;
-        cout << "\r" << 100 * ix / WINDOW_WIDTH << "%" << flush;
+        //cout << "\r" << 100 * ix / WINDOW_WIDTH << "%" << flush;
     }
     SDL_RenderPresent(renderer);
     while (1)
