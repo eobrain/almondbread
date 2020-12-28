@@ -4,5 +4,5 @@ exec="./$<"
 
 [mandelbrot]
 deps=["main.cc"]
-exec="g++ -Wall $< -lSDL2 -o $@"
+exec="g++ -Wall $< -pthread -lSDL2 -o $@"
 

@@ -3,23 +3,28 @@
 #include <iostream>
 #include <math.h>
 #include <array>
+#include <vector>
+#include <thread>
 #include <SDL2/SDL.h>
-
-constexpr int WINDOW_WIDTH = 1000;
-constexpr float centerRe = -0.568;
-constexpr float centerIm = -0.567;
-constexpr float width = 0.04;
-const int n = 30;
-constexpr int maxIterationCount = n * n * n;
 
 using std::array;
 using std::complex;
 using std::cout;
 using std::endl;
 using std::flush;
+using std::thread;
+using std::vector;
 
 namespace
 {
+
+    constexpr int WINDOW_WIDTH = 1000;
+    constexpr float centerRe = -0.568;
+    constexpr float centerIm = -0.567;
+    constexpr float width = 0.04;
+    const int n = 40;
+    constexpr int maxIterationCount = n * n * n;
+
     array<int, WINDOW_WIDTH * WINDOW_WIDTH> dataBuf;
     int maxFinite = -1;
 
@@ -79,23 +84,36 @@ namespace
         SDL_SetRenderDrawColor(renderer, red, green, blue, SDL_ALPHA_OPAQUE);
     }
 
+    int threadCount = thread::hardware_concurrency();
+
+    void threadWorker(int mod)
+    {
+        for (int ix = mod; ix < WINDOW_WIDTH; ix += threadCount)
+        {
+            for (int iy = 0; iy < WINDOW_WIDTH; ++iy)
+            {
+                data(ix, iy) = iterations(ix, iy);
+            }
+        }
+        cout << "Finished thread " << mod << endl;
+    }
 } //namespace
 
 int main(void)
 {
+    cout << "threadCount=" << threadCount << endl;
     SDL_Event event;
     SDL_Renderer *renderer;
     SDL_Window *window;
 
-    for (int ix = 0; ix < WINDOW_WIDTH; ++ix)
+    vector<thread> threads;
+    for (int mod = 0; mod < threadCount; ++mod)
     {
-        for (int iy = 0; iy < WINDOW_WIDTH; ++iy)
-        {
-            data(ix, iy) = iterations(ix, iy);
-        }
-        if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
-            break;
-        cout << "\r" << 100 * ix / WINDOW_WIDTH << "%" << flush;
+        threads.emplace_back(threadWorker, mod);
+    }
+    for (auto &thread : threads)
+    {
+        thread.join();
     }
 
     SDL_Init(SDL_INIT_VIDEO);
