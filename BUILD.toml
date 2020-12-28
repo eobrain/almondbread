@@ -1,0 +1,8 @@
+[run]
+deps=["mandelbrot"]
+exec="./$<"
+
+[mandelbrot]
+deps=["main.cc"]
+exec="g++ -Wall $< -lSDL2 -o $@"
+
