@@ -20,15 +20,19 @@ using std::cout;
 using std::endl;
 using std::flush;
 
-constexpr Uint8 clamp(int color)
-{
-    return color >= 255 ? 255 : color;
-}
-
 namespace
 {
-    array<int, WINDOW_WIDTH * WINDOW_WIDTH> data;
+    array<int, WINDOW_WIDTH * WINDOW_WIDTH> dataBuf;
 
+    inline int &data(int ix, int iy)
+    {
+        return dataBuf[ix + WINDOW_WIDTH * iy];
+    }
+
+    constexpr Uint8 clamp(int color)
+    {
+        return color >= 255 ? 255 : color;
+    }
     int iterations(complex<float> c)
     {
         complex<float> z = 0;
@@ -55,7 +59,7 @@ namespace
     void setColor(SDL_Renderer *renderer, int ix, int iy)
     {
         //std::cout << "c=" << c << std::endl;
-        int iters = data[ix + WINDOW_WIDTH * iy];
+        int iters = data(ix, iy);
         if (iters == MANY)
         {
             SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
@@ -82,7 +86,7 @@ int main(void)
     {
         for (int iy = 0; iy < WINDOW_WIDTH; ++iy)
         {
-            data[ix + WINDOW_WIDTH * iy] = iterations(ix, iy);
+            data(ix, iy) = iterations(ix, iy);
         }
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
             break;
@@ -93,9 +97,9 @@ int main(void)
     SDL_CreateWindowAndRenderer(WINDOW_WIDTH, WINDOW_WIDTH, 0, &window, &renderer);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
-    for (int ix = 0; ix < WINDOW_WIDTH; ++ix)
+    for (int ix = 1; ix < WINDOW_WIDTH; ++ix)
     {
-        for (int iy = 0; iy < WINDOW_WIDTH; ++iy)
+        for (int iy = 1; iy < WINDOW_WIDTH; ++iy)
         {
             setColor(renderer, ix, iy);
             SDL_RenderDrawPoint(renderer, ix, iy);
