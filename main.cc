@@ -25,7 +25,7 @@ namespace
     constexpr float centerRe = -0.568;
     constexpr float centerIm = -0.567;
     constexpr float width = 1;
-    const int n = 10;
+    const int n = 20;
     constexpr int maxIterationCount = n * n * n;
 
     array<int, WINDOW_WIDTH * WINDOW_WIDTH> dataBuf;
@@ -80,13 +80,15 @@ namespace
         //int dy = iters - data(ix, iy - 1);
 
         //int hue = 128 - 256 * iters / maxFinite;
-        ColorSpace::Lab lab(100 * log(iters) / log(maxFinite), 100*log(iters)/log(maxFinite)-100, 0);
-        ColorSpace::Rgb rgb;
-        lab.To<ColorSpace::Rgb>(&rgb);
+        //ColorSpace::Lab lab(100 * log(iters) / log(maxFinite), 100*log(iters)/log(maxFinite)-100, 0);
+        //ColorSpace::Rgb rgb;
+        //lab.To<ColorSpace::Rgb>(&rgb);
 
-        //Uint8 blue = 256 - red;
+        Uint8 b = clamp(256 * log(iters) / log(maxFinite));
+        Uint8 g = clamp(256 * sqrt(iters) / sqrt(maxFinite));;
+        Uint8 r = clamp(256 * iters / maxFinite);
         //cout << "red=" << (int)red << " blue=" << (int)blue << endl;
-        SDL_SetRenderDrawColor(renderer, rgb.r, rgb.g, rgb.b, SDL_ALPHA_OPAQUE);
+        SDL_SetRenderDrawColor(renderer, r, g, b, SDL_ALPHA_OPAQUE);
     }
 
     int threadCount = thread::hardware_concurrency();
