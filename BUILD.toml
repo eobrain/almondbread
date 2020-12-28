@@ -4,5 +4,5 @@ exec="./$<"
 
 [mandelbrot]
 deps=["main.cc"]
-exec="g++ -Wall $< ../ColorSpace/src/ColorSpace.cpp ../ColorSpace/src/Conversion.cpp -pthread -lSDL2 -I../ColorSpace/src -o $@"
+exec="g++ -Wall $< -pthread -lSDL2 -o $@"
 

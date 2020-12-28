@@ -7,9 +7,6 @@
 #include <thread>
 #include <SDL2/SDL.h>
 
-#include <ColorSpace.h>
-#include <Conversion.h>
-
 using std::array;
 using std::complex;
 using std::cout;
@@ -25,8 +22,7 @@ namespace
     constexpr float centerRe = -0.568;
     constexpr float centerIm = -0.567;
     constexpr float width = 1;
-    const int n = 20;
-    constexpr int maxIterationCount = n * n * n;
+    constexpr int maxIterationCount = 5000;
 
     array<int, WINDOW_WIDTH * WINDOW_WIDTH> dataBuf;
     int maxFinite = -1;
@@ -84,9 +80,10 @@ namespace
         //ColorSpace::Rgb rgb;
         //lab.To<ColorSpace::Rgb>(&rgb);
 
-        Uint8 b = clamp(256 * log(iters) / log(maxFinite));
-        Uint8 g = clamp(256 * sqrt(iters) / sqrt(maxFinite));;
-        Uint8 r = clamp(256 * iters / maxFinite);
+        Uint8 b = clamp(10 * log(iters));
+        Uint8 g = clamp(10 * sqrt(iters));
+        ;
+        Uint8 r = clamp(10 * iters);
         //cout << "red=" << (int)red << " blue=" << (int)blue << endl;
         SDL_SetRenderDrawColor(renderer, r, g, b, SDL_ALPHA_OPAQUE);
     }
@@ -139,7 +136,9 @@ int main(void)
         //cout << "\r" << 100 * ix / WINDOW_WIDTH << "%" << flush;
     }
     SDL_RenderPresent(renderer);
-    cout << "maxFinite=" << maxFinite << endl;
+    cout << "maxFinite=" << maxFinite
+         << " sqrt=" << sqrt(maxFinite)
+         << "log=" << log(maxFinite) << endl;
     while (1)
     {
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
