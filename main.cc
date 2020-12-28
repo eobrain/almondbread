@@ -1,39 +1,64 @@
 #include <stdlib.h>
 #include <complex>
 #include <iostream>
-
+#include <math.h> 
 #include <SDL2/SDL.h>
 
 constexpr int WINDOW_WIDTH = 1000;
-constexpr float centerRe = -0.6;
-constexpr float centerIm = 0.5;
-constexpr float width = 0.3;
-constexpr int maxIterationCount = 1000;
+constexpr float centerRe = -0.568;
+constexpr float centerIm = -0.567;
+constexpr float width = 0.004;
+constexpr int maxIterationCount = 10000;
+const int logMax = log(maxIterationCount);
+
+
+
+using std::complex;
+using std::cout;
+using std::endl;
+using std::flush;
+
+constexpr Uint8 clamp(int color)
+{
+    return color >= 255 ? 255 : color;
+}
 
 namespace
 {
-    void setColor(SDL_Renderer *renderer, int ix, int iy)
+    int iterations(complex<float> c)
     {
-        using namespace std::complex_literals;
-        float cRe = width * (ix - WINDOW_WIDTH / 2) / WINDOW_WIDTH + centerRe;
-        float cIm = width * (iy - WINDOW_WIDTH / 2) / WINDOW_WIDTH + centerIm;
-        std::complex<float> c = {cRe, cIm};
-        std::complex<float> z = 0;
-        //std::cout << "c=" << c << std::endl;
-
+        complex<float> z = 0;
         for (int i = 0; i < maxIterationCount; ++i)
         {
             z = z * z + c;
             //std::cout << i << ": " << z << std::endl;
             if (std::abs(z) > 2)
             {
-                Uint8 red = i & 0xff;
-                Uint8 blue = 256 - red;
-                SDL_SetRenderDrawColor(renderer, red, 128, blue, SDL_ALPHA_OPAQUE);
-                return;
+                return i;
             }
         }
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+        return -1;
+    }
+
+    void setColor(SDL_Renderer *renderer, int ix, int iy)
+    {
+        float cRe = width * (ix - WINDOW_WIDTH / 2) / WINDOW_WIDTH + centerRe;
+        float cIm = width * (iy - WINDOW_WIDTH / 2) / WINDOW_WIDTH + centerIm;
+        complex<float> c = {cRe, cIm};
+        //std::cout << "c=" << c << std::endl;
+        int iters = iterations(c);
+        if (iters == -1)
+        {
+            SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+            return;
+        }
+
+        Uint8 red = clamp(256*log(iters)/logMax);
+        Uint8 green = red;
+        Uint8 blue = red;
+        //Uint8 blue = 256 - red;
+        //cout << "red=" << (int)red << " blue=" << (int)blue << endl;
+        SDL_SetRenderDrawColor(renderer, red, green, blue, SDL_ALPHA_OPAQUE);
     }
 
 } //namespace
@@ -57,8 +82,7 @@ int main(void)
         }
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
             break;
-        std::cout << "\r" << 100 * ix / WINDOW_WIDTH << "%";
-        std::cout.flush();
+        cout << "\r" << 100 * ix / WINDOW_WIDTH << "%" << flush;
     }
     SDL_RenderPresent(renderer);
     while (1)
@@ -66,7 +90,12 @@ int main(void)
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
             break;
     }
-    std::cout << std::endl;
+    cout << endl;
+    if (SDL_SaveBMP(SDL_GetWindowSurface(window), "mandelbrot.bmp") != 0)
+    {
+        // Error saving bitmap
+        printf("SDL_SaveBMP failed: %s\n", SDL_GetError());
+    }
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
