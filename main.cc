@@ -18,32 +18,34 @@ using std::vector;
 namespace
 {
 
-    constexpr int WINDOW_WIDTH = 1000;
-    constexpr float centerRe = -0.567;
-    constexpr float centerIm = -0.567;
-    constexpr float width = 0.0005;
+    constexpr int WIDTH = 1600;
+    constexpr int HEIGHT = 900;
+    constexpr float centerRe = -0.5671;
+    constexpr float centerIm = -0.56698;
+    constexpr float width = 0.02;
     constexpr int maxIterationCount = 1000000;
 
-    array<int, WINDOW_WIDTH * WINDOW_WIDTH> dataBuf;
-    array<int, WINDOW_WIDTH * WINDOW_WIDTH> smoothedBuf;
+    array<int, WIDTH * HEIGHT> dataBuf;
+    array<int, WIDTH * HEIGHT> smoothedBuf;
     int maxFinite = -1;
 
     inline int &data(int ix, int iy)
     {
-        return dataBuf[ix + WINDOW_WIDTH * iy];
+        // Optimized for iy changing faster
+        return dataBuf[HEIGHT * ix + iy];
     }
 
     inline int &smoothed(int ix, int iy)
     {
-        return smoothedBuf[ix + WINDOW_WIDTH * iy];
+        return smoothedBuf[HEIGHT * ix + iy];
     }
 
     constexpr int CENTERWEIGHT = 4;
 
     inline void smooth()
     {
-        for (int ix = 1; ix < WINDOW_WIDTH - 1; ++ix)
-            for (int iy = 1; iy < WINDOW_WIDTH - 1; ++iy)
+        for (int ix = 1; ix < WIDTH - 1; ++ix)
+            for (int iy = 1; iy < HEIGHT - 1; ++iy)
                 smoothed(ix, iy) = (CENTERWEIGHT * data(ix, iy) + data(ix + 1, iy) + data(ix - 1, iy) + data(ix, iy + 1) + data(ix, iy - 1)) / (CENTERWEIGHT + 4);
     }
 
@@ -72,8 +74,9 @@ namespace
 
     int iterations(int ix, int iy)
     {
-        float cRe = width * (ix - WINDOW_WIDTH / 2) / WINDOW_WIDTH + centerRe;
-        float cIm = width * (iy - WINDOW_WIDTH / 2) / WINDOW_WIDTH + centerIm;
+        float scale = width / WIDTH;
+        float cRe = scale * (ix - WIDTH / 2) + centerRe;
+        float cIm = scale * (iy - HEIGHT / 2) + centerIm;
         complex<float> c = {cRe, cIm};
         return iterations(c);
     }
@@ -100,9 +103,9 @@ namespace
 
     void threadWorker(int mod)
     {
-        for (int ix = mod; ix < WINDOW_WIDTH; ix += threadCount)
+        for (int ix = mod; ix < WIDTH; ix += threadCount)
         {
-            for (int iy = 0; iy < WINDOW_WIDTH; ++iy)
+            for (int iy = 0; iy < HEIGHT; ++iy)
             {
                 data(ix, iy) = iterations(ix, iy);
             }
@@ -130,12 +133,12 @@ int main(void)
     smooth();
 
     SDL_Init(SDL_INIT_VIDEO);
-    SDL_CreateWindowAndRenderer(WINDOW_WIDTH, WINDOW_WIDTH, 0, &window, &renderer);
+    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, 0, &window, &renderer);
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
     SDL_RenderClear(renderer);
-    for (int ix = 1; ix < WINDOW_WIDTH - 1; ++ix)
+    for (int ix = 1; ix < WIDTH - 1; ++ix)
     {
-        for (int iy = 1; iy < WINDOW_WIDTH - 1; ++iy)
+        for (int iy = 1; iy < HEIGHT - 1; ++iy)
         {
             setColor(renderer, ix, iy);
             SDL_RenderDrawPoint(renderer, ix, iy);
@@ -147,7 +150,7 @@ int main(void)
     SDL_RenderPresent(renderer);
     cout << "maxFinite=" << maxFinite
          << " sqrt=" << sqrt(maxFinite)
-         << "log=" << log(maxFinite) << endl;
+         << " log=" << log(maxFinite) << endl;
     while (1)
     {
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)

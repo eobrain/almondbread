@@ -2,7 +2,15 @@
 deps=["mandelbrot"]
 exec="./$<"
 
+[check]
+deps=["mandelbrot_debug"]
+exec="valgrind ./$<"
+
 [mandelbrot]
 deps=["main.cc"]
-exec="g++ -Wall $< -pthread -lSDL2 -o $@"
+exec="g++ -O3 -Wall $< -pthread -lSDL2 -o $@"
+
+[mandelbrot_debug]
+deps=["main.cc"]
+exec="g++ -g -Wall $< -pthread -lSDL2 -o $@"
 
