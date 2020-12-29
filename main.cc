@@ -21,15 +21,16 @@ typedef unsigned char Uint8;
 
 namespace {
 
-constexpr int WIDTH = 160;
-constexpr int HEIGHT = 90;
+constexpr int WIDTH = 1400;
+constexpr int HEIGHT = 900;
 constexpr float centerRe = -0.5671;
 constexpr float centerIm = -0.56698;
 constexpr float width = 0.2;
-constexpr int maxIterationCount = 100;
+constexpr int maxIterationCount = 10000;
 
 array<int, WIDTH * HEIGHT> dataBuf;
-array<Uint8, WIDTH * HEIGHT * 4> imageBuf;
+// array<Uint8, WIDTH * HEIGHT * 4> imageBuf;
+Uint8 imageBuf[WIDTH * HEIGHT * 4];
 int maxFinite = -1;
 
 inline int &data(int ix, int iy) {
@@ -109,16 +110,17 @@ int main(void) {
     thread.join();
   }
 
-  for (int ix = 1; ix < WIDTH - 1; ++ix)
-    for (int iy = 1; iy < HEIGHT - 1; ++iy) setColor(ix, iy);
+  for (int ix = 0; ix < WIDTH; ++ix)
+    for (int iy = 0; iy < HEIGHT; ++iy) {
+      setColor(ix, iy);
+    }
 
   cout << "maxFinite=" << maxFinite << " sqrt=" << sqrt(maxFinite)
        << " log=" << log(maxFinite) << endl
        << int(COLOR_SCALE * maxFinite) << " "
        << int(COLOR_SCALE * sqrt(maxFinite)) << " "
        << int(COLOR_SCALE * log(maxFinite)) << endl;
-  unsigned error =
-      lodepng::encode("mandelbrot.png", imageBuf.data(), WIDTH - 2, HEIGHT - 2);
+  unsigned error = lodepng::encode("mandelbrot.png", imageBuf, WIDTH, HEIGHT);
 
   // if there's an error, display it
   if (error) {
