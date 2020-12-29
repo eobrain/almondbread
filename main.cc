@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <array>
 #include <complex>
@@ -9,126 +10,179 @@
 
 #include "lodepng.h"
 
-using std::array;
+using std::cerr;
 using std::complex;
 using std::cout;
 using std::endl;
 using std::flush;
+using std::string;
 using std::thread;
 using std::vector;
 
-typedef unsigned char Uint8;
-
 namespace {
 
-constexpr int WIDTH = 1400;
-constexpr int HEIGHT = 900;
-constexpr float centerRe = -0.5671;
-constexpr float centerIm = -0.56698;
-constexpr float width = 0.2;
-constexpr int maxIterationCount = 10000;
+// constexpr int imgWidth = 1400;
+// constexpr int imgHeight = 900;
+// constexpr float centerRe = -0.5671;
+// constexpr float centerIm = -0.56698;
+// constexpr float width = 0.2;
+// constexpr int maxIterationCount = 10000;
 
-array<int, WIDTH * HEIGHT> dataBuf;
-array<Uint8, WIDTH * HEIGHT * 4> imageBuf;
-// Uint8 imageBuf[WIDTH * HEIGHT * 4];
-int maxFinite = -1;
+struct Params {
+  int imgWidth = 1400;
+  int imgHeight = 900;
+  float centerRe = -0.5671;
+  float centerIm = -0.56698;
+  float width = 0.2;
+  int maxIterationCount = 10000;
+};
 
-inline int &data(int ix, int iy) {
-  // Optimized for ix changing faster
-  return dataBuf[ix + WIDTH * iy];
-}
+class Image {
+  const int _width;
+  const int _height;
+  vector<int> _iterations;
+  unsigned char *const _pixels;
 
-inline Uint8 &image(int ix, int iy, int layer) {
-  return imageBuf[4 * ix + 4 * WIDTH * iy + layer];
-}
+ public:
+  Image(int width, int height)
+      : _width(width),
+        _height(height),
+        _iterations(width * height),
+        _pixels(new unsigned char[width * height * 4]) {}
+  ~Image() { delete[] _pixels; }
+  int &iterations(int ix, int iy) {
+    // Optimized for ix changing faster
+    return _iterations[ix + _width * iy];
+  }
 
-constexpr int CENTERWEIGHT = 4;
+  unsigned char &pixel(int ix, int iy, int layer) {
+    return _pixels[4 * ix + 4 * _width * iy + layer];
+  }
 
-constexpr Uint8 clamp(int color) { return color >= 255 ? 255 : color; }
-int iterations(complex<float> c) {
+  bool writePng(const Params &params) {
+    unsigned error = lodepng::encode("mandelbrot.png", _pixels, params.imgWidth,
+                                     params.imgHeight);
+    if (error) {
+      cout << "encoder error " << error << ": " << lodepng_error_text(error)
+           << endl;
+      return false;
+    }
+    return true;
+  }
+};
+
+constexpr unsigned char clamp(int color) { return color >= 255 ? 255 : color; }
+
+int iterations(int maxIterationCount, complex<float> c) {
   complex<float> z = 0;
   for (int i = 0; i < maxIterationCount; ++i) {
     z = z * z + c;
     if (std::abs(z) > 2) {
-      if (i > maxFinite) {
-        maxFinite = i;
-      }
       return i;
     }
   }
   return maxIterationCount;
 }
 
-int iterations(int ix, int iy) {
-  float scale = width / WIDTH;
-  float cRe = scale * (ix - WIDTH / 2) + centerRe;
-  float cIm = scale * (iy - HEIGHT / 2) + centerIm;
+int iterations(const Params &params, int ix, int iy) {
+  float scale = params.width / params.imgWidth;
+  float cRe = scale * (ix - params.imgWidth / 2) + params.centerRe;
+  float cIm = scale * (iy - params.imgHeight / 2) + params.centerIm;
   complex<float> c = {cRe, cIm};
-  return iterations(c);
+  return iterations(params.maxIterationCount, c);
 }
 
 const int COLOR_SCALE = 32;
 
-void setColor(int ix, int iy) {
+void setColor(Image *img, int maxIterationCount, int ix, int iy) {
   // std::cout << "c=" << c << std::endl;
-  int iters = data(ix, iy);
+  int iters = img->iterations(ix, iy);
   if (iters == maxIterationCount) {
-    image(ix, iy, 0) = 0;
-    image(ix, iy, 1) = 0;
-    image(ix, iy, 2) = 0;
-    image(ix, iy, 3) = 255;
+    img->pixel(ix, iy, 0) = 0;
+    img->pixel(ix, iy, 1) = 0;
+    img->pixel(ix, iy, 2) = 0;
+    img->pixel(ix, iy, 3) = 255;
     return;
   }
 
   // RGBA
-  image(ix, iy, 0) = clamp(COLOR_SCALE * log(iters));
-  image(ix, iy, 1) = clamp(COLOR_SCALE * sqrt(iters));
-  image(ix, iy, 2) = clamp(COLOR_SCALE * iters);
-  image(ix, iy, 3) = 255;
+  img->pixel(ix, iy, 0) = clamp(COLOR_SCALE * log(iters));
+  img->pixel(ix, iy, 1) = clamp(COLOR_SCALE * sqrt(iters));
+  img->pixel(ix, iy, 2) = clamp(COLOR_SCALE * iters);
+  img->pixel(ix, iy, 3) = 255;
 }
 
 int threadCount = thread::hardware_concurrency();
 
-void threadWorker(int mod) {
-  for (int iy = mod; iy < HEIGHT; iy += threadCount)
-    for (int ix = 0; ix < WIDTH; ++ix) {
-      data(ix, iy) = iterations(ix, iy);
+void threadWorker(const Params &params, Image *img, int mod) {
+  for (int iy = mod; iy < params.imgHeight; iy += threadCount)
+    for (int ix = 0; ix < params.imgWidth; ++ix) {
+      img->iterations(ix, iy) = iterations(params, ix, iy);
     }
   cout << "Finished thread " << mod << endl;
 }
+
 }  // namespace
 
-int main(void) {
+int main(int argc, char *const argv[]) {
   cout << "threadCount=" << threadCount << endl;
+  Params params;
+
+  int opt;
+  while ((opt = getopt(argc, argv, "s:c:w:i:")) != -1) {
+    switch (opt) {
+      case 'W':
+        params.imgWidth = atoi(optarg);
+        break;
+      case 'H':
+        params.imgHeight = atoi(optarg);
+        break;
+      case 'x':
+        params.centerRe = atof(optarg);
+        break;
+      case 'y':
+        params.centerIm = atof(optarg);
+        break;
+      case 'w':
+        params.width = atof(optarg);
+        break;
+      case 'i':
+        params.maxIterationCount = atoi(optarg);
+        break;
+      default: /* '?' */
+        cerr << "Usage: " << argv[0]
+             << " -W imgWidth -H imgHeight -x centerReal -y centerImaginary -w "
+                "viewportWidth -i iterations"
+             << endl
+             << "  defaults:  -W 1400 -H 900  -x -0.5671 -y -0.56698 -w 0.2 -i "
+                "10000"
+             << endl;
+        return EXIT_FAILURE;
+    }
+  }
+
+  Image img(params.imgWidth, params.imgHeight);
 
   vector<thread> threads;
   for (int mod = 0; mod < threadCount; ++mod) {
-    threads.emplace_back(threadWorker, mod);
+    threads.emplace_back(threadWorker, params, &img, mod);
   }
   for (auto &thread : threads) {
     thread.join();
   }
 
-  for (int iy = 0; iy < HEIGHT; ++iy)
-    for (int ix = 0; ix < WIDTH; ++ix) {
-      setColor(ix, iy);
+  for (int iy = 0; iy < params.imgHeight; ++iy)
+    for (int ix = 0; ix < params.imgWidth; ++ix) {
+      setColor(&img, params.maxIterationCount, ix, iy);
     }
 
-  cout << "maxFinite=" << maxFinite << " sqrt=" << sqrt(maxFinite)
-       << " log=" << log(maxFinite) << endl
-       << int(COLOR_SCALE * maxFinite) << " "
-       << int(COLOR_SCALE * sqrt(maxFinite)) << " "
-       << int(COLOR_SCALE * log(maxFinite)) << endl;
-  unsigned error =
-      lodepng::encode("mandelbrot.png", imageBuf.data(), WIDTH, HEIGHT);
+  cout << "maxIterationCount=" << params.maxIterationCount
+       << " sqrt=" << sqrt(params.maxIterationCount)
+       << " log=" << log(params.maxIterationCount) << endl
+       << int(COLOR_SCALE * params.maxIterationCount) << " "
+       << int(COLOR_SCALE * sqrt(params.maxIterationCount)) << " "
+       << int(COLOR_SCALE * log(params.maxIterationCount)) << endl;
+  bool ok = img.writePng(params);
 
-  // if there's an error, display it
-  if (error) {
-    cout << "encoder error " << error << ": " << lodepng_error_text(error)
-         << endl;
-    // cout << "encoder error " << error << ": " << error << endl;
-    return error;
-  }
-
-  return EXIT_SUCCESS;
+  return ok ? 0 : 1;
 }
