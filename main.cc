@@ -18,12 +18,12 @@ using std::vector;
 namespace
 {
 
-    constexpr int WIDTH = 1600;
-    constexpr int HEIGHT = 900;
+    constexpr int WIDTH = 1600 + 2;
+    constexpr int HEIGHT = 900 + 2;
     constexpr float centerRe = -0.5671;
     constexpr float centerIm = -0.56698;
-    constexpr float width = 0.02;
-    constexpr int maxIterationCount = 1000000;
+    constexpr float width = 0.2;
+    constexpr int maxIterationCount = 10000;
 
     array<int, WIDTH * HEIGHT> dataBuf;
     array<int, WIDTH * HEIGHT> smoothedBuf;
@@ -37,7 +37,7 @@ namespace
 
     inline int &smoothed(int ix, int iy)
     {
-        return smoothedBuf[HEIGHT * ix + iy];
+        return smoothedBuf[HEIGHT * (ix - 1) + (iy - 1)];
     }
 
     constexpr int CENTERWEIGHT = 4;
@@ -46,7 +46,8 @@ namespace
     {
         for (int ix = 1; ix < WIDTH - 1; ++ix)
             for (int iy = 1; iy < HEIGHT - 1; ++iy)
-                smoothed(ix, iy) = (CENTERWEIGHT * data(ix, iy) + data(ix + 1, iy) + data(ix - 1, iy) + data(ix, iy + 1) + data(ix, iy - 1)) / (CENTERWEIGHT + 4);
+                smoothed(ix, iy) = data(ix, iy);
+        //smoothed(ix, iy) = (CENTERWEIGHT * data(ix, iy) + data(ix + 1, iy) + data(ix - 1, iy) + data(ix, iy + 1) + data(ix, iy - 1)) / (CENTERWEIGHT + 4);
     }
 
     constexpr Uint8 clamp(int color)
@@ -81,6 +82,8 @@ namespace
         return iterations(c);
     }
 
+    const int COLOR_SCALE = 32;
+
     void setColor(SDL_Renderer *renderer, int ix, int iy)
     {
         //std::cout << "c=" << c << std::endl;
@@ -91,10 +94,9 @@ namespace
             return;
         }
 
-        Uint8 b = clamp(10 * log(iters));
-        Uint8 g = clamp(10 * sqrt(iters));
-        ;
-        Uint8 r = clamp(10 * iters);
+        Uint8 b = clamp(COLOR_SCALE * log(iters));
+        Uint8 g = clamp(COLOR_SCALE * sqrt(iters));
+        Uint8 r = clamp(COLOR_SCALE * iters);
         //cout << "red=" << (int)red << " blue=" << (int)blue << endl;
         SDL_SetRenderDrawColor(renderer, r, g, b, SDL_ALPHA_OPAQUE);
     }
@@ -150,7 +152,10 @@ int main(void)
     SDL_RenderPresent(renderer);
     cout << "maxFinite=" << maxFinite
          << " sqrt=" << sqrt(maxFinite)
-         << " log=" << log(maxFinite) << endl;
+         << " log=" << log(maxFinite) << endl
+         << int(COLOR_SCALE * maxFinite) << " "
+         << int(COLOR_SCALE * sqrt(maxFinite)) << " "
+         << int(COLOR_SCALE * log(maxFinite)) << endl;
     while (1)
     {
         if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
