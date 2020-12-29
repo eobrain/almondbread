@@ -35,6 +35,7 @@ struct Params {
   float centerIm = -0.56698;
   float width = 0.2;
   int maxIterationCount = 10000;
+  const char *outputFileName = "mandelbrot.png";
 };
 
 class Image {
@@ -60,8 +61,8 @@ class Image {
   }
 
   bool writePng(const Params &params) {
-    unsigned error = lodepng::encode("mandelbrot.png", _pixels, params.imgWidth,
-                                     params.imgHeight);
+    unsigned error = lodepng::encode(params.outputFileName, _pixels,
+                                     params.imgWidth, params.imgHeight);
     if (error) {
       cout << "encoder error " << error << ": " << lodepng_error_text(error)
            << endl;
@@ -129,7 +130,7 @@ int main(int argc, char *const argv[]) {
   Params params;
 
   int opt;
-  while ((opt = getopt(argc, argv, "s:c:w:i:")) != -1) {
+  while ((opt = getopt(argc, argv, "s:c:w:i:o:")) != -1) {
     switch (opt) {
       case 'W':
         params.imgWidth = atoi(optarg);
@@ -149,13 +150,16 @@ int main(int argc, char *const argv[]) {
       case 'i':
         params.maxIterationCount = atoi(optarg);
         break;
+      case 'o':
+        params.outputFileName = optarg;
+        break;
       default: /* '?' */
         cerr << "Usage: " << argv[0]
              << " -W imgWidth -H imgHeight -x centerReal -y centerImaginary -w "
                 "viewportWidth -i iterations"
              << endl
              << "  defaults:  -W 1400 -H 900  -x -0.5671 -y -0.56698 -w 0.2 -i "
-                "10000"
+                "10000 -o mandelbrot.png"
              << endl;
         return EXIT_FAILURE;
     }

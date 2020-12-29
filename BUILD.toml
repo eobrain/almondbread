@@ -1,3 +1,7 @@
+[serve]
+deps=["mandelbrot"]
+exec="node index.js"
+
 [display]
 deps=["%.png"]
 exec="display $<"
