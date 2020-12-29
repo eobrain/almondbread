@@ -15,6 +15,7 @@ using std::complex;
 using std::cout;
 using std::endl;
 using std::flush;
+using std::ostream;
 using std::string;
 using std::thread;
 using std::vector;
@@ -37,6 +38,13 @@ struct Params {
   int maxIterationCount = 10000;
   const char *outputFileName = "mandelbrot.png";
 };
+ostream &operator<<(ostream &out, const Params &p) {
+  out << "imgWidth=" << p.imgWidth << " imgHeight=" << p.imgHeight
+      << " imgHeight=" << p.imgHeight << " centerRe=" << p.centerRe
+      << " centerIm=" << p.centerIm << " width=" << p.width
+      << " maxIterationCount=" << p.maxIterationCount;
+  return out;
+}
 
 class Image {
   const int _width;
@@ -130,7 +138,7 @@ int main(int argc, char *const argv[]) {
   Params params;
 
   int opt;
-  while ((opt = getopt(argc, argv, "s:c:w:i:o:")) != -1) {
+  while ((opt = getopt(argc, argv, "W:H:x:y:w:i:o:")) != -1) {
     switch (opt) {
       case 'W':
         params.imgWidth = atoi(optarg);
@@ -164,6 +172,8 @@ int main(int argc, char *const argv[]) {
         return EXIT_FAILURE;
     }
   }
+
+  cout << params << endl;
 
   Image img(params.imgWidth, params.imgHeight);
 

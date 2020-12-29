@@ -7,7 +7,13 @@ const port = 3000
 app.use(express.static('public'))
 
 app.get('/image', (req, res) => {
-  const ls = spawn('./mandelbrot', ['-o', 'public/mandelbrot.png', '-i', '1000'])
+  const ls = spawn('./mandelbrot', [
+    '-o', 'public/mandelbrot.png',
+    '-x', req.query.x,
+    '-y', req.query.y,
+    '-w', req.query.w,
+    '-i', req.query.i
+  ])
 
   ls.stdout.on('data', data => {
     console.log(`stdout: ${data}`)
