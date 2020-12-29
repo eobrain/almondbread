@@ -21,42 +21,29 @@ typedef unsigned char Uint8;
 namespace
 {
 
-    constexpr int WIDTH = 160 + 2;
-    constexpr int HEIGHT = 90 + 2;
+    constexpr int WIDTH = 160;
+    constexpr int HEIGHT = 90;
     constexpr float centerRe = -0.5671;
     constexpr float centerIm = -0.56698;
     constexpr float width = 0.2;
     constexpr int maxIterationCount = 100;
 
     array<int, WIDTH * HEIGHT> dataBuf;
-    array<int, WIDTH * HEIGHT> smoothedBuf;
     array<Uint8, WIDTH * HEIGHT * 4> imageBuf;
     int maxFinite = -1;
 
     inline int &data(int ix, int iy)
     {
-        // Optimized for iy changing faster
-        return dataBuf[HEIGHT * ix + iy];
-    }
-
-    inline int &smoothed(int ix, int iy)
-    {
-        return smoothedBuf[HEIGHT * (ix - 1) + (iy - 1)];
+        // Optimized for ix changing faster
+        return dataBuf[ix + WIDTH*iy];
     }
 
     inline Uint8 &image(int ix, int iy, int layer)
     {
-        return imageBuf[4 * HEIGHT * (ix - 1) + 4 * (iy - 1) + layer];
+        return imageBuf[4 * ix + 4 * WIDTH * iy + layer];
     }
+    
     constexpr int CENTERWEIGHT = 4;
-
-    inline void smooth()
-    {
-        for (int ix = 1; ix < WIDTH - 1; ++ix)
-            for (int iy = 1; iy < HEIGHT - 1; ++iy)
-                smoothed(ix, iy) = data(ix, iy);
-        //smoothed(ix, iy) = (CENTERWEIGHT * data(ix, iy) + data(ix + 1, iy) + data(ix - 1, iy) + data(ix, iy + 1) + data(ix, iy - 1)) / (CENTERWEIGHT + 4);
-    }
 
     constexpr Uint8 clamp(int color)
     {
@@ -68,7 +55,6 @@ namespace
         for (int i = 0; i < maxIterationCount; ++i)
         {
             z = z * z + c;
-            //std::cout << i << ": " << z << std::endl;
             if (std::abs(z) > 2)
             {
                 if (i > maxFinite)
@@ -95,7 +81,7 @@ namespace
     void setColor(int ix, int iy)
     {
         //std::cout << "c=" << c << std::endl;
-        int iters = smoothed(ix, iy);
+        int iters = data(ix, iy);
         if (iters == maxIterationCount)
         {
             image(ix, iy, 0) = 0;
@@ -140,7 +126,6 @@ int main(void)
     {
         thread.join();
     }
-    smooth();
 
     for (int ix = 1; ix < WIDTH - 1; ++ix)
         for (int iy = 1; iy < HEIGHT - 1; ++iy)
