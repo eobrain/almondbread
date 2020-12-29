@@ -29,8 +29,8 @@ constexpr float width = 0.2;
 constexpr int maxIterationCount = 10000;
 
 array<int, WIDTH * HEIGHT> dataBuf;
-// array<Uint8, WIDTH * HEIGHT * 4> imageBuf;
-Uint8 imageBuf[WIDTH * HEIGHT * 4];
+array<Uint8, WIDTH * HEIGHT * 4> imageBuf;
+// Uint8 imageBuf[WIDTH * HEIGHT * 4];
 int maxFinite = -1;
 
 inline int &data(int ix, int iy) {
@@ -90,11 +90,10 @@ void setColor(int ix, int iy) {
 int threadCount = thread::hardware_concurrency();
 
 void threadWorker(int mod) {
-  for (int ix = mod; ix < WIDTH; ix += threadCount) {
-    for (int iy = 0; iy < HEIGHT; ++iy) {
+  for (int iy = mod; iy < HEIGHT; iy += threadCount)
+    for (int ix = 0; ix < WIDTH; ++ix) {
       data(ix, iy) = iterations(ix, iy);
     }
-  }
   cout << "Finished thread " << mod << endl;
 }
 }  // namespace
@@ -110,8 +109,8 @@ int main(void) {
     thread.join();
   }
 
-  for (int ix = 0; ix < WIDTH; ++ix)
-    for (int iy = 0; iy < HEIGHT; ++iy) {
+  for (int iy = 0; iy < HEIGHT; ++iy)
+    for (int ix = 0; ix < WIDTH; ++ix) {
       setColor(ix, iy);
     }
 
@@ -120,7 +119,8 @@ int main(void) {
        << int(COLOR_SCALE * maxFinite) << " "
        << int(COLOR_SCALE * sqrt(maxFinite)) << " "
        << int(COLOR_SCALE * log(maxFinite)) << endl;
-  unsigned error = lodepng::encode("mandelbrot.png", imageBuf, WIDTH, HEIGHT);
+  unsigned error =
+      lodepng::encode("mandelbrot.png", imageBuf.data(), WIDTH, HEIGHT);
 
   // if there's an error, display it
   if (error) {
