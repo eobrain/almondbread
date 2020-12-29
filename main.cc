@@ -5,7 +5,8 @@
 #include <array>
 #include <vector>
 #include <thread>
-#include <SDL2/SDL.h>
+
+#include "lodepng.h"
 
 using std::array;
 using std::complex;
@@ -15,18 +16,21 @@ using std::flush;
 using std::thread;
 using std::vector;
 
+typedef unsigned char Uint8;
+
 namespace
 {
 
-    constexpr int WIDTH = 1600 + 2;
-    constexpr int HEIGHT = 900 + 2;
+    constexpr int WIDTH = 160 + 2;
+    constexpr int HEIGHT = 90 + 2;
     constexpr float centerRe = -0.5671;
     constexpr float centerIm = -0.56698;
     constexpr float width = 0.2;
-    constexpr int maxIterationCount = 10000;
+    constexpr int maxIterationCount = 100;
 
     array<int, WIDTH * HEIGHT> dataBuf;
     array<int, WIDTH * HEIGHT> smoothedBuf;
+    array<Uint8, WIDTH * HEIGHT * 4> imageBuf;
     int maxFinite = -1;
 
     inline int &data(int ix, int iy)
@@ -40,6 +44,10 @@ namespace
         return smoothedBuf[HEIGHT * (ix - 1) + (iy - 1)];
     }
 
+    inline Uint8 &image(int ix, int iy, int layer)
+    {
+        return imageBuf[4 * HEIGHT * (ix - 1) + 4 * (iy - 1) + layer];
+    }
     constexpr int CENTERWEIGHT = 4;
 
     inline void smooth()
@@ -84,21 +92,24 @@ namespace
 
     const int COLOR_SCALE = 32;
 
-    void setColor(SDL_Renderer *renderer, int ix, int iy)
+    void setColor(int ix, int iy)
     {
         //std::cout << "c=" << c << std::endl;
         int iters = smoothed(ix, iy);
         if (iters == maxIterationCount)
         {
-            SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+            image(ix, iy, 0) = 0;
+            image(ix, iy, 1) = 0;
+            image(ix, iy, 2) = 0;
+            image(ix, iy, 3) = 255;
             return;
         }
 
-        Uint8 b = clamp(COLOR_SCALE * log(iters));
-        Uint8 g = clamp(COLOR_SCALE * sqrt(iters));
-        Uint8 r = clamp(COLOR_SCALE * iters);
-        //cout << "red=" << (int)red << " blue=" << (int)blue << endl;
-        SDL_SetRenderDrawColor(renderer, r, g, b, SDL_ALPHA_OPAQUE);
+        // RGBA
+        image(ix, iy, 0) = clamp(COLOR_SCALE * log(iters));
+        image(ix, iy, 1) = clamp(COLOR_SCALE * sqrt(iters));
+        image(ix, iy, 2) = clamp(COLOR_SCALE * iters);
+        image(ix, iy, 3) = 255;
     }
 
     int threadCount = thread::hardware_concurrency();
@@ -119,9 +130,6 @@ namespace
 int main(void)
 {
     cout << "threadCount=" << threadCount << endl;
-    SDL_Event event;
-    SDL_Renderer *renderer;
-    SDL_Window *window;
 
     vector<thread> threads;
     for (int mod = 0; mod < threadCount; ++mod)
@@ -134,40 +142,25 @@ int main(void)
     }
     smooth();
 
-    SDL_Init(SDL_INIT_VIDEO);
-    SDL_CreateWindowAndRenderer(WIDTH, HEIGHT, 0, &window, &renderer);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 0);
-    SDL_RenderClear(renderer);
     for (int ix = 1; ix < WIDTH - 1; ++ix)
-    {
         for (int iy = 1; iy < HEIGHT - 1; ++iy)
-        {
-            setColor(renderer, ix, iy);
-            SDL_RenderDrawPoint(renderer, ix, iy);
-        }
-        if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
-            break;
-        //cout << "\r" << 100 * ix / WINDOW_WIDTH << "%" << flush;
-    }
-    SDL_RenderPresent(renderer);
+            setColor(ix, iy);
+
     cout << "maxFinite=" << maxFinite
          << " sqrt=" << sqrt(maxFinite)
          << " log=" << log(maxFinite) << endl
          << int(COLOR_SCALE * maxFinite) << " "
          << int(COLOR_SCALE * sqrt(maxFinite)) << " "
          << int(COLOR_SCALE * log(maxFinite)) << endl;
-    while (1)
+    unsigned error = lodepng::encode("mandelbrot.png", imageBuf.data(), WIDTH - 2, HEIGHT - 2);
+
+    //if there's an error, display it
+    if (error)
     {
-        if (SDL_PollEvent(&event) && event.type == SDL_QUIT)
-            break;
+        cout << "encoder error " << error << ": " << lodepng_error_text(error) << endl;
+        //cout << "encoder error " << error << ": " << error << endl;
+        return error;
     }
-    if (SDL_SaveBMP(SDL_GetWindowSurface(window), "mandelbrot.bmp") != 0)
-    {
-        // Error saving bitmap
-        printf("SDL_SaveBMP failed: %s\n", SDL_GetError());
-    }
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+
     return EXIT_SUCCESS;
 }

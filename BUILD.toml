@@ -1,4 +1,8 @@
-[run]
+[display]
+deps=["%.png"]
+exec="display $<"
+
+["mandelbrot.png"]
 deps=["mandelbrot"]
 exec="./$<"
 
@@ -7,10 +11,10 @@ deps=["mandelbrot_debug"]
 exec="valgrind ./$<"
 
 [mandelbrot]
-deps=["main.cc"]
-exec="g++ -O3 -Wall $< -pthread -lSDL2 -o $@"
+deps=["main.cc", "lodepng.cpp"]
+exec="g++ -O3 -Wall $+ -pthread -o $@"
 
 [mandelbrot_debug]
-deps=["main.cc"]
-exec="g++ -g -Wall $< -pthread -lSDL2 -o $@"
+deps=["main.cc", "lodepng.cpp"]
+exec="g++ -g -Wall $+ -pthread -o $@"
 
