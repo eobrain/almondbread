@@ -1,7 +1,7 @@
 /* global imgElement, xElement, yElement, wElement, iElement */
 
-const imgWidth = 1400
-const imgHeight = 900
+const imgWidth = 1920
+const imgHeight = 1080
 
 const debounce = (() => {
   let suppressed = false

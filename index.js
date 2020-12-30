@@ -12,7 +12,9 @@ app.get('/image', (req, res) => {
     '-x', req.query.x,
     '-y', req.query.y,
     '-w', req.query.w,
-    '-i', req.query.i
+    '-i', req.query.i,
+    '-W', '1920',
+    '-H', '1080'
   ])
 
   ls.stdout.on('data', data => {
