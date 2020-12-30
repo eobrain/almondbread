@@ -2,6 +2,7 @@
 
 * Prerequisites
   * Install Node.js
+  * Install the g++ compiler for C++
   * To install dependencies locally, execute
 
     ```sh
