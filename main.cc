@@ -24,17 +24,17 @@ namespace {
 
 // constexpr int imgWidth = 1400;
 // constexpr int imgHeight = 900;
-// constexpr float centerRe = -0.5671;
-// constexpr float centerIm = -0.56698;
-// constexpr float width = 0.2;
+// constexpr double centerRe = -0.5671;
+// constexpr double centerIm = -0.56698;
+// constexpr double width = 0.2;
 // constexpr int maxIterationCount = 10000;
 
 struct Params {
   int imgWidth = 1400;
   int imgHeight = 900;
-  float centerRe = -0.5671;
-  float centerIm = -0.56698;
-  float width = 0.2;
+  double centerRe = -0.5671;
+  double centerIm = -0.56698;
+  double width = 0.2;
   int maxIterationCount = 10000;
   const char *outputFileName = "mandelbrot.png";
 };
@@ -82,8 +82,8 @@ class Image {
 
 constexpr unsigned char clamp(int color) { return color >= 255 ? 255 : color; }
 
-int iterations(int maxIterationCount, complex<float> c) {
-  complex<float> z = 0;
+int iterations(int maxIterationCount, complex<double> c) {
+  complex<double> z = 0;
   for (int i = 0; i < maxIterationCount; ++i) {
     z = z * z + c;
     if (std::abs(z) > 2) {
@@ -94,10 +94,10 @@ int iterations(int maxIterationCount, complex<float> c) {
 }
 
 int iterations(const Params &params, int ix, int iy) {
-  float scale = params.width / params.imgWidth;
-  float cRe = scale * (ix - params.imgWidth / 2) + params.centerRe;
-  float cIm = scale * (iy - params.imgHeight / 2) + params.centerIm;
-  complex<float> c = {cRe, cIm};
+  double scale = params.width / params.imgWidth;
+  double cRe = scale * (ix - params.imgWidth / 2) + params.centerRe;
+  double cIm = scale * (iy - params.imgHeight / 2) + params.centerIm;
+  complex<double> c = {cRe, cIm};
   return iterations(params.maxIterationCount, c);
 }
 
