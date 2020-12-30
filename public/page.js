@@ -38,6 +38,7 @@ const doit = () => {
     console.log({ xCoordinate, yCoordinate, newX, newY })
     xElement.value = newX
     yElement.value = newY
+    wElement.value = w / 10
     doit()
   }
 }
