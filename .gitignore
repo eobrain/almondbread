@@ -1,2 +1,5 @@
 .vscode
 /mandelbrot
+/mandelbrot.png
+/node_modules
+/public/mandelbrot.png
