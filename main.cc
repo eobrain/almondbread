@@ -68,7 +68,9 @@ class Image {
     return _pixels[4 * ix + 4 * _width * iy + layer];
   }
 
-  bool writePng(const Params &params) {
+  int centerIterations() { return iterations(_width / 2, _height / 2); }
+
+  bool writePng(const Params &params) const {
     unsigned error = lodepng::encode(params.outputFileName, _pixels,
                                      params.imgWidth, params.imgHeight);
     if (error) {
@@ -101,7 +103,7 @@ int iterations(const Params &params, int ix, int iy) {
   return iterations(params.maxIterationCount, c);
 }
 
-const int COLOR_SCALE = 32;
+const int COLOR_SCALE = 8;
 
 void setColor(Image *img, int maxIterationCount, int ix, int iy) {
   // std::cout << "c=" << c << std::endl;
@@ -195,7 +197,8 @@ int main(int argc, char *const argv[]) {
        << " log=" << log(params.maxIterationCount) << endl
        << int(COLOR_SCALE * params.maxIterationCount) << " "
        << int(COLOR_SCALE * sqrt(params.maxIterationCount)) << " "
-       << int(COLOR_SCALE * log(params.maxIterationCount)) << endl;
+       << int(COLOR_SCALE * log(params.maxIterationCount)) << endl
+       << "centerIterations=" << img.centerIterations() << endl;
   bool ok = img.writePng(params);
 
   return ok ? 0 : 1;
