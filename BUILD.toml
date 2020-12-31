@@ -12,7 +12,7 @@ exec="time ./$<"
 
 [check]
 deps=["mandelbrot_debug"]
-exec="valgrind ./$<"
+exec="valgrind ./$< -W 140 -H 90 -i 10"
 
 [mandelbrot]
 deps=["main.cc", "lodepng.cpp"]
