@@ -180,9 +180,10 @@ void setColor(Image *img, int maxIterationCount, int ix, int iy) {
     return;
   }
 
+  double value = (double)iters / maxIterationCount;
   double value = log(iters) / log(maxIterationCount);
   // double value = log(stats.mapped(iters)) / log(stats.range());
-  auto rgb = hsv2rgb(250 * value, 1 - value, 1 - value);
+  auto rgb = hsv2rgb(250 * value, 1, 1 - value);
   for (int i = 0; i < 3; ++i) {
     img->pixel(ix, iy, i) = rgb[i] * 256;
   }
