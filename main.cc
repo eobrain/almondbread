@@ -7,22 +7,23 @@
 #include <fstream>
 #include <iostream>
 #include <limits>
+#include <map>
 #include <thread>
-#include <unordered_map>
 #include <vector>
 
 #include "lodepng.h"
 
+using std::array;
 using std::cerr;
 using std::complex;
 using std::cout;
 using std::endl;
 using std::flush;
+using std::map;
 using std::ofstream;
 using std::ostream;
 using std::string;
 using std::thread;
-using std::unordered_map;
 using std::vector;
 
 namespace {
@@ -48,7 +49,7 @@ ostream &operator<<(ostream &out, const Params &p) {
 }
 
 class Stats {
-  unordered_map<int, int> histogram;
+  map<int, int> histogram;
   int min = INT_MAX;
   int max = INT_MIN;
 
@@ -109,6 +110,32 @@ class Image {
   }
 };
 
+array<double, 3> hsv2rgb(double h, double s, double v) {
+  double c = 0.0, m = 0.0, x = 0.0;
+  c = v * s;
+  x = c * (1.0 - fabs(fmod(h / 60.0, 2) - 1.0));
+  m = v - c;
+  if (h >= 0.0 && h < 60.0) {
+    return {c + m, x + m, m};
+  }
+  if (h >= 60.0 && h < 120.0) {
+    return {x + m, c + m, m};
+  }
+  if (h >= 120.0 && h < 180.0) {
+    return {m, c + m, x + m};
+  }
+  if (h >= 180.0 && h < 240.0) {
+    return {m, x + m, c + m};
+  }
+  if (h >= 240.0 && h < 300.0) {
+    return {x + m, m, c + m};
+  }
+  if (h >= 300.0 && h < 360.0) {
+    return {c + m, m, x + m};
+  }
+  return {m, m, m};
+}
+
 constexpr unsigned char clamp(int color) { return color >= 255 ? 255 : color; }
 
 int iterations(int maxIterationCount, complex<double> c) {
@@ -146,44 +173,10 @@ void setColor(Image *img, int maxIterationCount, int ix, int iy) {
     return;
   }
 
-  // RGBA
-  // const double logIters = log(iters);
-  // img->pixel(ix, iy, 0) = clamp(COLOR_SCALE * logIters * logIters *
-  // logIters); img->pixel(ix, iy, 1) = clamp(COLOR_SCALE * logIters *
-  // logIters); img->pixel(ix, iy, 2) = clamp(COLOR_SCALE * logIters);
-  // unsigned char pixel[] = {0, 0, 0};
-  // for (int bit = 0; bit < 24; ++bit) {
-  //  pixel[bit % 3] |= (((iters >> bit) & 1) << (bit / 3));
-  //}
-  /*int m = 0;
-  for (int bit = 0; bit < 24; ++bit) {
-    pixel[bit % 3] |= (((iters * m) % 2) << (bit / 3));
-    m *= 2;
-  }*/
-  /*for (int layer = 0; layer < 3; ++layer) {
-    for (int bit = 0; bit < 8; ++bit) {
-      pixel[layer] |= (((iters >> (layer + bit * 3) & 1) << bit));
-    }
-  }*/
-  double value = log(iters)/log(maxIterationCount);
-  switch (3 * iters / maxIterationCount) {
-    case 0:
-      img->pixel(ix, iy, 0) = 3 * 256 * value;
-      img->pixel(ix, iy, 1) = 0;
-      img->pixel(ix, iy, 2) = 0;
-      break;
-    case 1:
-      img->pixel(ix, iy, 0) = 255;
-      img->pixel(ix, iy, 1) = 3 * 256 * value - 256;
-      img->pixel(ix, iy, 2) = 0;
-      break;
-    case 2:
-      img->pixel(ix, iy, 0) = 255;
-      img->pixel(ix, iy, 1) = 255;
-      img->pixel(ix, iy, 2) = 3 * 256 * value - 2 * 256;
-      break;
-    default:
-      static_assert("cannot get here");
+  double value = log(iters) / log(maxIterationCount);
+  auto rgb = hsv2rgb(250*value, 0.5, value);
+  for (int i = 0; i < 3; ++i) {
+    img->pixel(ix, iy, i) = rgb[i] * 256;
   }
   img->pixel(ix, iy, 3) = 255;
 }
