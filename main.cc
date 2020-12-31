@@ -4,8 +4,11 @@
 
 #include <array>
 #include <complex>
+#include <fstream>
 #include <iostream>
+#include <limits>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "lodepng.h"
@@ -15,19 +18,17 @@ using std::complex;
 using std::cout;
 using std::endl;
 using std::flush;
+using std::ofstream;
 using std::ostream;
 using std::string;
 using std::thread;
+using std::unordered_map;
 using std::vector;
 
 namespace {
 
-// constexpr int imgWidth = 1400;
-// constexpr int imgHeight = 900;
-// constexpr double centerRe = -0.5671;
-// constexpr double centerIm = -0.56698;
-// constexpr double width = 0.2;
-// constexpr int maxIterationCount = 10000;
+constexpr int INT_MIN = std::numeric_limits<int>::min();
+constexpr int INT_MAX = std::numeric_limits<int>::max();
 
 struct Params {
   int imgWidth = 1400;
@@ -40,9 +41,35 @@ struct Params {
 };
 ostream &operator<<(ostream &out, const Params &p) {
   out << "imgWidth=" << p.imgWidth << " imgHeight=" << p.imgHeight
-      << " imgHeight=" << p.imgHeight << " centerRe=" << p.centerRe
-      << " centerIm=" << p.centerIm << " width=" << p.width
-      << " maxIterationCount=" << p.maxIterationCount;
+      << " centerRe=" << p.centerRe << " centerIm=" << p.centerIm
+      << " width=" << p.width << " maxIterationCount=" << p.maxIterationCount
+      << " outputFileName" << p.outputFileName;
+  return out;
+}
+
+class Stats {
+  unordered_map<int, int> histogram;
+  int min = INT_MAX;
+  int max = INT_MIN;
+
+ public:
+  void operator()(int i) {
+    if (i > max) max = i;
+    if (i < min) min = i;
+    auto lookup = histogram.find(i);
+    int prev = lookup == histogram.end() ? 0 : lookup->second;
+    histogram[i] = prev + 1;
+  }
+  friend ostream &operator<<(ostream &, const Stats &);
+};
+ostream &operator<<(ostream &out, const Stats &s) {
+  out << "Iterations,Count\n";
+  for (int i = s.min; i <= s.max; ++i) {
+    auto lookup = s.histogram.find(i);
+    if (lookup != s.histogram.end()) {
+      out << i << "," << lookup->second << "\n";
+    }
+  }
   return out;
 }
 
@@ -103,11 +130,14 @@ int iterations(const Params &params, int ix, int iy) {
   return iterations(params.maxIterationCount, c);
 }
 
-const int COLOR_SCALE = 8;
+const int COLOR_SCALE = 10;
+
+Stats stats;
 
 void setColor(Image *img, int maxIterationCount, int ix, int iy) {
   // std::cout << "c=" << c << std::endl;
   int iters = img->iterations(ix, iy);
+  stats(iters);
   if (iters == maxIterationCount) {
     img->pixel(ix, iy, 0) = 0;
     img->pixel(ix, iy, 1) = 0;
@@ -117,9 +147,44 @@ void setColor(Image *img, int maxIterationCount, int ix, int iy) {
   }
 
   // RGBA
-  img->pixel(ix, iy, 0) = clamp(COLOR_SCALE * log(iters));
-  img->pixel(ix, iy, 1) = clamp(COLOR_SCALE * sqrt(iters));
-  img->pixel(ix, iy, 2) = clamp(COLOR_SCALE * iters);
+  // const double logIters = log(iters);
+  // img->pixel(ix, iy, 0) = clamp(COLOR_SCALE * logIters * logIters *
+  // logIters); img->pixel(ix, iy, 1) = clamp(COLOR_SCALE * logIters *
+  // logIters); img->pixel(ix, iy, 2) = clamp(COLOR_SCALE * logIters);
+  // unsigned char pixel[] = {0, 0, 0};
+  // for (int bit = 0; bit < 24; ++bit) {
+  //  pixel[bit % 3] |= (((iters >> bit) & 1) << (bit / 3));
+  //}
+  /*int m = 0;
+  for (int bit = 0; bit < 24; ++bit) {
+    pixel[bit % 3] |= (((iters * m) % 2) << (bit / 3));
+    m *= 2;
+  }*/
+  /*for (int layer = 0; layer < 3; ++layer) {
+    for (int bit = 0; bit < 8; ++bit) {
+      pixel[layer] |= (((iters >> (layer + bit * 3) & 1) << bit));
+    }
+  }*/
+  double value = log(iters)/log(maxIterationCount);
+  switch (3 * iters / maxIterationCount) {
+    case 0:
+      img->pixel(ix, iy, 0) = 3 * 256 * value;
+      img->pixel(ix, iy, 1) = 0;
+      img->pixel(ix, iy, 2) = 0;
+      break;
+    case 1:
+      img->pixel(ix, iy, 0) = 255;
+      img->pixel(ix, iy, 1) = 3 * 256 * value - 256;
+      img->pixel(ix, iy, 2) = 0;
+      break;
+    case 2:
+      img->pixel(ix, iy, 0) = 255;
+      img->pixel(ix, iy, 1) = 255;
+      img->pixel(ix, iy, 2) = 3 * 256 * value - 2 * 256;
+      break;
+    default:
+      static_assert("cannot get here");
+  }
   img->pixel(ix, iy, 3) = 255;
 }
 
@@ -200,6 +265,10 @@ int main(int argc, char *const argv[]) {
        << int(COLOR_SCALE * log(params.maxIterationCount)) << endl
        << "centerIterations=" << img.centerIterations() << endl;
   bool ok = img.writePng(params);
+
+  ofstream histogram("histogram.csv");
+  histogram << stats;
+  histogram.close();
 
   return ok ? 0 : 1;
 }
