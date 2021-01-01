@@ -1,4 +1,4 @@
-/* global imgElement, xElement, yElement, wElement, iElement */
+/* global imgElement, xElement, yElement, wElement, iElement, consoleElement */
 
 import { imgWidth, imgHeight } from './common.js'
 
@@ -15,24 +15,30 @@ import { imgWidth, imgHeight } from './common.js'
   return { suppress }
 })() */
 
+let busy = false
+
 const doit = () => {
   // if (debounce.suppress()) {
   //  return
   // }
-  if (window.location.hash) {
-    const [x, y, w, i] = window.location.hash.substr(1).split('_')
-    xElement.value = x
-    yElement.value = y
-    wElement.value = w
-    iElement.value = i
+  if (!window.location.hash) {
+    window.location = '#0_0_8_100'
   }
-  const x = xElement.value
-  const y = yElement.value
-  const w = wElement.value
-  const i = iElement.value
+  const [x, y, w, i] = window.location.hash.substr(1).split('_')
+  iElement.value = i
   console.log('values:', x, y, w, i)
+  busy = true
+  consoleElement.innerText = 'Busy ...'
   imgElement.setAttribute('src', `/image?x=${x}&y=${y}&w=${w}&i=${i}`)
+  imgElement.onload = () => {
+    consoleElement.innerText = 'Got image'
+    busy = false
+  }
   imgElement.onclick = event => {
+    if (busy) {
+      alert('busy')
+      return
+    }
     const xCoordinate = event.offsetX
     const yCoordinate = event.offsetY
     const scale = w / imgWidth
@@ -56,8 +62,5 @@ window.onload = () => {
   //  doit()
   // }
   window.onhashchange = doit
-  if (!window.location.hash) {
-    window.location = '#0_0_8_100'
-  }
   doit()
 }
