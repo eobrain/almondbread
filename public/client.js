@@ -2,7 +2,7 @@
 
 import { imgWidth, imgHeight } from './common.js'
 
-const debounce = (() => {
+/* const debounce = (() => {
   let suppressed = false
   const suppress = () => {
     if (suppressed) {
@@ -13,11 +13,18 @@ const debounce = (() => {
     return false
   }
   return { suppress }
-})()
+})() */
 
 const doit = () => {
-  if (debounce.suppress()) {
-    return
+  // if (debounce.suppress()) {
+  //  return
+  // }
+  if (window.location.hash) {
+    const [x, y, w, i] = window.location.hash.substr(1).split('_')
+    xElement.value = x
+    yElement.value = y
+    wElement.value = w
+    iElement.value = i
   }
   const x = xElement.value
   const y = yElement.value
@@ -38,13 +45,19 @@ const doit = () => {
     xElement.value = newX
     yElement.value = newY
     wElement.value = w / 10
+    window.location = `#${newX}_${newY}_${w / 10}_${iElement.value}`
     doit()
   }
 }
 
 window.onload = () => {
-  for (const inputElement of document.querySelectorAll('input')) {
-    inputElement.oninput = doit
-    doit()
+  // for (const inputElement of document.querySelectorAll('input')) {
+  //  inputElement.oninput = doit
+  //  doit()
+  // }
+  window.onhashchange = doit
+  if (!window.location.hash) {
+    window.location = '#0_0_8_100'
   }
+  doit()
 }
