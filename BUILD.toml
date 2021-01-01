@@ -1,6 +1,6 @@
 [serve]
 deps=["mandelbrot"]
-exec="node index.js"
+exec="node server.js"
 
 [display]
 deps=["%.png"]

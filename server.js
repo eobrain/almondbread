@@ -1,5 +1,6 @@
-const express = require('express')
-const { spawn } = require('child_process')
+import express from 'express'
+import { spawn } from 'child_process'
+import { imgWidth, imgHeight } from './public/common.js'
 
 const app = express()
 const port = 3000
@@ -13,8 +14,8 @@ app.get('/image', (req, res) => {
     '-y', req.query.y,
     '-w', req.query.w,
     '-i', req.query.i,
-    '-W', '1920',
-    '-H', '1080'
+    '-W', imgWidth,
+    '-H', imgHeight
   ])
 
   ls.stdout.on('data', data => {

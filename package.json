@@ -2,8 +2,9 @@
   "name": "almondbread",
   "version": "0.0.1",
   "description": "Mandelbrot set explorer",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "run": "bajel",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Eamonn O'Brien-Strain",
@@ -11,5 +12,6 @@
   "dependencies": {
     "bajel": "^1.0.1",
     "express": "^4.17.1"
-  }
+  },
+  "type": "module"
 }

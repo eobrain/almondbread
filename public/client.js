@@ -1,7 +1,6 @@
 /* global imgElement, xElement, yElement, wElement, iElement */
 
-const imgWidth = 1920
-const imgHeight = 1080
+import { imgWidth, imgHeight } from './common.js'
 
 const debounce = (() => {
   let suppressed = false
