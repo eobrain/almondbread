@@ -2,6 +2,13 @@
 deps=["mandelbrot"]
 exec="node server.js"
 
+[clean-serve]
+deps=["mandelbrot", "clean"]
+exec="node server.js"
+
+[clean]
+exec="rm -f public/*.png"
+
 [display]
 deps=["%.png"]
 exec="display $<"

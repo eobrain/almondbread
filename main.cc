@@ -55,6 +55,7 @@ ostream &operator<<(ostream &out, const Params &p) {
 
 class Stats {
   map<int, int> _histogram;
+  int _totalCount = 0;
   int _min = INT_MAX;
   int _max = INT_MIN;
 
@@ -66,6 +67,19 @@ class Stats {
     auto lookup = _histogram.find(i);
     int prev = lookup == _histogram.end() ? 0 : lookup->second;
     _histogram[i] = prev + 1;
+    ++_totalCount;
+  }
+  double normalize(int i) const { return 1.0 * (i - _min) / (_max - _min); }
+  double percentile(int i) const {
+    int acc = 0;
+    for (auto const &pair : _histogram) {
+      if (i == pair.first) {
+        acc += pair.second / 2;
+        break;
+      }
+      acc += pair.second;
+    }
+    return (double)acc / _totalCount;
   }
   int mapped(int iterations) const { return iterations - _min; }
   int range() const { return _max - _min; }
@@ -105,6 +119,26 @@ class Image {
   }
 
   int centerIterations() { return iterations(_width / 2, _height / 2); }
+
+  void stretchColor() {
+    int n = _width * _height * 4;
+    int maxs[] = {0, 0, 0};
+    for (int i = 0; i < n; ++i) {
+      int layer = i % 4;
+      if (layer < 3) {
+        if (_pixels[i] > maxs[layer]) {
+          maxs[layer] = _pixels[i];
+        }
+      }
+    }
+    cout << "maxs=" << maxs[0] << " " << maxs[1] << " " << maxs[1] << endl;
+    for (int i = 0; i < n; ++i) {
+      int layer = i % 4;
+      if (layer < 3 && maxs[layer] > 0) {
+        _pixels[i] = (int)_pixels[i] * 256 / maxs[layer];
+      }
+    }
+  }
 
   bool writePng(const Params &params) const {
     unsigned error = lodepng::encode(params.outputFileName, _pixels,
@@ -166,12 +200,10 @@ int iterations(const Params &params, int ix, int iy) {
 
 const int COLOR_SCALE = 10;
 
-Stats stats;
-
-void setColor(Image *img, int maxIterationCount, int ix, int iy) {
+void setColor(const Stats &stats, Image *img, int maxIterationCount, int ix,
+              int iy) {
   // std::cout << "c=" << c << std::endl;
   int iters = img->iterations(ix, iy);
-  stats(iters);
   if (iters == maxIterationCount) {
     img->pixel(ix, iy, 0) = 0;
     img->pixel(ix, iy, 1) = 0;
@@ -181,9 +213,11 @@ void setColor(Image *img, int maxIterationCount, int ix, int iy) {
   }
 
   // double value = (double)iters / maxIterationCount;
-  double value = log(iters) / log(maxIterationCount);
+  // double value = log(iters) / log(maxIterationCount);
   // double value = log(stats.mapped(iters)) / log(stats.range());
-  auto rgb = hsv2rgb(250 * value, 0.5 + value / 2, 1 - value);
+  // double value = stats.normalize(iters);
+  double value = stats.percentile(iters);
+  auto rgb = hsv2rgb(250 * value, value, 1 - value / 2);
   for (int i = 0; i < 3; ++i) {
     img->pixel(ix, iy, i) = rgb[i] * 256;
   }
@@ -245,7 +279,7 @@ int main(int argc, char *const argv[]) {
   P(params);
 
   Image img(params.imgWidth, params.imgHeight);
-
+  Stats stats;
   vector<thread> threads;
   for (int mod = 0; mod < threadCount; ++mod) {
     threads.emplace_back(threadWorker, params, &img, mod);
@@ -256,8 +290,17 @@ int main(int argc, char *const argv[]) {
 
   for (int iy = 0; iy < params.imgHeight; ++iy)
     for (int ix = 0; ix < params.imgWidth; ++ix) {
-      setColor(&img, params.maxIterationCount, ix, iy);
+      int iters = img.iterations(ix, iy);
+      if (iters != params.maxIterationCount) {
+        stats(iters);
+      }
     }
+  for (int iy = 0; iy < params.imgHeight; ++iy)
+    for (int ix = 0; ix < params.imgWidth; ++ix) {
+      setColor(stats, &img, params.maxIterationCount, ix, iy);
+    }
+
+  // img.stretchColor();
 
   P(params);
   bool ok = img.writePng(params);
