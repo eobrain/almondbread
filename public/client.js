@@ -4,6 +4,11 @@ import { imgWidth, imgHeight } from './common.js'
 
 let busy = false
 
+const setCursorMagnification = () => {
+  const magnification = magnificationElement.value
+  imgElement.className = `cursor-${magnification}`
+}
+
 const doit = () => {
   if (!window.location.hash) {
     window.location = '#0_0_8_100'
@@ -16,25 +21,22 @@ const doit = () => {
   console.log('values:', x, y, w, i)
   busy = true
   consoleElement.innerText = 'Busy ...'
+  imgElement.className = 'cursor-busy'
   imgElement.setAttribute('src', `/image?x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.onload = () => {
+    setCursorMagnification()
     consoleElement.innerText = ''
     busy = false
   }
   imgElement.onclick = event => {
-    if (busy) {
-      alert('busy')
-      return
-    }
-    const xCoordinate = event.offsetX
-    const yCoordinate = event.offsetY
+    const { offsetX, offsetY } = event
     const scale = w / imgWidth
     const height = scale * imgHeight
     const viewPortLeft = x - w / 2
     const viewPortTop = y - height / 2
-    const newX = viewPortLeft + xCoordinate * scale
-    const newY = viewPortTop + yCoordinate * scale
-    console.log({ xCoordinate, yCoordinate, newX, newY })
+    const newX = viewPortLeft + offsetX * scale
+    const newY = viewPortTop + offsetY * scale
+    console.log({ offsetX, offsetY, newX, newY })
     const magnification = magnificationElement.value
     window.location = `#${newX}_${newY}_${w / (1 << magnification)}_${iElement.value}`
     doit()
@@ -42,10 +44,7 @@ const doit = () => {
 }
 
 window.onload = () => {
-  // for (const inputElement of document.querySelectorAll('input')) {
-  //  inputElement.oninput = doit
-  //  doit()
-  // }
   window.onhashchange = doit
+  magnificationElement.onchange = setCursorMagnification
   doit()
 }

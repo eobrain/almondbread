@@ -2,17 +2,19 @@
 
 <head>
     <script src="/client.js" type="module"></script>
+    <link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
     <h1>Mandelbrot Set Explorer</h1>
     <div>
-        Center (<span id="xElement"></span>, <span id="yElement"></span>) , <span id="wElement"></span> wide </span><span
-            id="consoleElement" />
+        Center (<span id="xElement"></span>, <span id="yElement"></span>) ,
+        <span id="wElement"></span> wide </span><span
+            id="consoleElement"></span>
     </div>
 
     <label for="magnification">Magnification</label>
-    <input type="range" id="magnificationElement" name="magnification" min="1"
+    <input type="range" id="magnificationElement" name="magnification" min="0"
         max="5" step="1">
 
 

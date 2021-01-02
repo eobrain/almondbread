@@ -1,0 +1,21 @@
+.cursor-busy {
+    cursor: not-allowed
+}
+.cursor-0 {
+    cursor: move
+}
+.cursor-1 {
+    cursor: url("/cursor1.png") 480 270,zoom-in
+}
+.cursor-2 {
+    cursor: url("/cursor2.png") 240 135,zoom-in
+}
+.cursor-3 {
+    cursor: url("/cursor3.png") 120 68,zoom-in
+}
+.cursor-4 {
+    cursor: url("/cursor4.png") 60 34,zoom-in
+}
+.cursor-5 {
+    cursor: url("/cursor5.png") 30 17,zoom-in
+}
