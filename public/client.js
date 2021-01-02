@@ -1,4 +1,4 @@
-/* global imgElement, magnificationElement, xElement, yElement, wElement, iElement, consoleElement */
+/* global imgElement, magnificationElement, zoomElement,  xElement, yElement, wElement, iElement, consoleElement */
 
 import { imgWidth, imgHeight } from './common.js'
 
@@ -6,6 +6,7 @@ let busy = false
 
 const setCursorMagnification = () => {
   const magnification = magnificationElement.value
+  zoomElement.innerText = 1 << magnification
   imgElement.className = `cursor-${magnification}`
 }
 
@@ -47,7 +48,9 @@ const doit = () => {
     const newY = viewPortTop + offsetY * scale
     console.log({ offsetX, offsetY, newX, newY })
     const magnification = magnificationElement.value
-    window.location = `#${newX}_${newY}_${w / (1 << magnification)}_${iElement.value}`
+    const zoom = 1 << magnification
+    zoomElement.innerText = zoom
+    window.location = `#${newX}_${newY}_${w / zoom}_${iElement.value}`
     doit()
   }
 }
