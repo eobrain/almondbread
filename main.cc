@@ -9,6 +9,7 @@
 #include <limits>
 #include <map>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 
 #include "lodepng.h"
@@ -24,6 +25,7 @@ using std::ofstream;
 using std::ostream;
 using std::string;
 using std::thread;
+using std::unordered_map;
 using std::vector;
 
 //#define P(x) cout << __FILE__ << ":" << __LINE__ << ":" << #x << "=" << x <<
@@ -55,6 +57,8 @@ ostream &operator<<(ostream &out, const Params &p) {
 
 class Stats {
   map<int, int> _histogram;
+  unordered_map<int, double> _itersToPercentile;
+
   int _totalCount = 0;
   int _min = INT_MAX;
   int _max = INT_MIN;
@@ -69,18 +73,15 @@ class Stats {
     _histogram[i] = prev + 1;
     ++_totalCount;
   }
-  double normalize(int i) const { return 1.0 * (i - _min) / (_max - _min); }
-  double percentile(int i) const {
-    int acc = 0;
+  void preparePercentile() {
+    double acc = 0;
     for (auto const &pair : _histogram) {
-      if (i == pair.first) {
-        acc += pair.second / 2;
-        break;
-      }
+      _itersToPercentile[pair.first] = (acc + pair.second / 2) / _totalCount;
       acc += pair.second;
     }
-    return (double)acc / _totalCount;
   }
+  double normalize(int i) const { return 1.0 * (i - _min) / (_max - _min); }
+  double percentile(int i) const { return _itersToPercentile.at(i); }
   int mapped(int iterations) const { return iterations - _min; }
   int range() const { return _max - _min; }
   friend ostream &operator<<(ostream &, const Stats &);
@@ -215,8 +216,9 @@ void setColor(const Stats &stats, Image *img, int maxIterationCount, int ix,
   // double value = (double)iters / maxIterationCount;
   // double value = log(iters) / log(maxIterationCount);
   // double value = log(stats.mapped(iters)) / log(stats.range());
-  // double value = stats.normalize(iters);
+  // double value = (stats.normalize(iters) + stats.percentile(iters)) / 2;
   double value = stats.percentile(iters);
+  value *= value;
   auto rgb = hsv2rgb(250 * value, value, 1 - value / 2);
   for (int i = 0; i < 3; ++i) {
     img->pixel(ix, iy, i) = rgb[i] * 256;
@@ -295,6 +297,7 @@ int main(int argc, char *const argv[]) {
         stats(iters);
       }
     }
+  stats.preparePercentile();
   for (int iy = 0; iy < params.imgHeight; ++iy)
     for (int ix = 0; ix < params.imgWidth; ++ix) {
       setColor(stats, &img, params.maxIterationCount, ix, iy);
