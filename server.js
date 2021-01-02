@@ -10,11 +10,11 @@ app.use(express.static('public'))
 
 app.get('/image', (req, res) => {
   const { x, y, w, i } = req.query
-  const imgPath = `/mandelbrot_${x}_${y}_${w}_${i}.png`
+  const imgPath = `/cache/mandelbrot_${x}_${y}_${w}_${i}.png`
   const imgFileName = `public${imgPath}`
 
   if (existsSync(imgFileName)) {
-    console.log('Using exiting cached ', imgFileName)
+    console.log('Using existing cached ', imgFileName)
     res.redirect(imgPath)
     return
   }

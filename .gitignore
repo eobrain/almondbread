@@ -3,5 +3,5 @@
 /mandelbrot.png
 /node_modules
 /public/mandelbrot.png
-/public/mandelbrot_*.png
+/public/cache/mandelbrot_*.png
 /histogram.csv

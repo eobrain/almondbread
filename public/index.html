@@ -7,22 +7,33 @@
 
 <body>
     <h1>Mandelbrot Set Explorer</h1>
-    <div>
-        Center (<span id="xElement"></span>, <span id="yElement"></span>) ,
-        <span id="wElement"></span> wide </span><span
-            id="consoleElement"></span>
-    </div>
+    <dl>
+        <dt>Viewing</dt>
+        <dd>
+            <span id="wElement"></span> wide view at
+            (<span id="xElement"></span>, <span id="yElement"></span>)
+            using max <span id="iElement"></span>
+            iterations per pixel
+        </dd>
+        <dt>Click image to</dt>
+        <dd>
+            <label for="magnification">zoom ×<span
+                    id="zoomElement"></span></label>
+            <input type="range" id="magnificationElement" name="magnification"
+                min="0" max="5" step="1" value="4">
 
-    <input type="range" id="magnificationElement" name="magnification" min="0"
-        max="5" step="1">
-    <label for="magnification">Zoom ×<span id="zoomElement"></span></label>
+            <label for="iLog10"> using max <span id="iNewElement"></span>
+                iterations per pixel</label>
+            <input id="iLog10Element" type="range" name="iLog10" min="3" max="5"
+                step="1" value="3">
+        </dd>
+    </dl>
+
 
 
     <img id="imgElement" />
 
     <div>
-        <label for="i">Max Iterations:</label>
-        <input id="iElement" type="number" name="i" value="1000">
     </div>
 </body>
 
