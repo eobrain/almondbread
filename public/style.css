@@ -1,8 +1,8 @@
 .cursor-busy {
-    cursor: not-allowed
+    cursor: busy
 }
 .cursor-0 {
-    cursor: move
+    cursor: wait
 }
 .cursor-1 {
     cursor: url("/cursor1.png") 480 270,zoom-in
