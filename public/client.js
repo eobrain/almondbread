@@ -29,6 +29,15 @@ const doit = () => {
     busy = false
   }
   imgElement.onclick = event => {
+    if (busy) {
+      imgElement.className = 'cursor-error'
+      setTimeout(() => {
+        if (busy) {
+          imgElement.className = 'cursor-busy'
+        }
+      }, 200)
+      return
+    }
     const { offsetX, offsetY } = event
     const scale = w / imgWidth
     const height = scale * imgHeight
