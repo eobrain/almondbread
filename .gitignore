@@ -5,3 +5,4 @@
 /public/mandelbrot.png
 /public/cache/mandelbrot_*.png
 /histogram.csv
+/mandelbrot_debug

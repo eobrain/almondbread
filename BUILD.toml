@@ -23,7 +23,7 @@ exec="valgrind ./$< -W 140 -H 90 -i 10"
 
 [mandelbrot]
 deps=["main.cc", "lodepng.cpp"]
-exec="g++ -O3 -Wall $+ -pthread -o $@"
+exec="g++ -DNDEBUG -O3 -Wall $+ -pthread -o $@"
 
 [mandelbrot_debug]
 deps=["main.cc", "lodepng.cpp"]

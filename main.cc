@@ -4,10 +4,12 @@
 
 #include <array>
 #include <complex>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <limits>
 #include <map>
+#include <sstream>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -20,18 +22,22 @@ using std::complex;
 using std::cout;
 using std::endl;
 using std::flush;
+using std::getenv;
 using std::map;
 using std::ofstream;
 using std::ostream;
 using std::string;
+using std::stringstream;
 using std::thread;
 using std::unordered_map;
 using std::vector;
 
-//#define P(x) cout << __FILE__ << ":" << __LINE__ << ":" << #x << "=" << x <<
-// endl
-
+#ifndef NDEBUG
+#define P(x) \
+  cout << __FILE__ << ":" << __LINE__ << ":" << #x << "=" << x << endl
+#else
 #define P(x)
+#endif
 
 namespace {
 
@@ -65,7 +71,6 @@ class Stats {
 
  public:
   void operator()(int i) {
-    P(i);
     if (i > _max) _max = i;
     if (i < _min) _min = i;
     auto lookup = _histogram.find(i);
@@ -95,6 +100,11 @@ ostream &operator<<(ostream &out, const Stats &s) {
     }
   }
   return out;
+}
+
+void addText(lodepng::State *state, const char *key, const string &value) {
+  unsigned err = lodepng_add_text(&state->info_png, key, value.c_str());
+  if (err) throw err;
 }
 
 class Image {
@@ -142,10 +152,59 @@ class Image {
   }
 
   bool writePng(const Params &params) const {
-    unsigned error = lodepng::encode(params.outputFileName, _pixels,
-                                     params.imgWidth, params.imgHeight);
-    if (error) {
-      cerr << "encoder error " << error << ": " << lodepng_error_text(error)
+    try {
+      lodepng::State state;
+      lodepng_info_init(&state.info_png);
+
+      stringstream titleStream;
+      titleStream << "Mandelbrot Set At (" << params.centerRe << ","
+                  << params.centerIm << ")";
+      const string title = titleStream.str();
+      addText(&state, "Title", title);
+
+      const string author = getenv("USER");
+      addText(&state, "Author", author);
+
+      stringstream descriptionStream;
+      descriptionStream << "\n\nThis is a view of the Mandelbrot set that is "
+                        << params.width
+                        << " wide,\ncalculated with a maximum of "
+                        << params.maxIterationCount << " iterations per pixel.";
+      const string description = descriptionStream.str();
+      addText(&state, "Description", description);
+
+      // TODO(eob) Allow creator name to be parameterized to be someone other
+      // than me.
+      const string copyright =
+          " by Eamonn O'Brien-Strain, licensed under CC "
+          "BY-NC-SA 4.0. To view a copy of this license, visit "
+          "https://creativecommons.org/licenses/by-nc-sa/4.0";
+      addText(&state, "Copyright", title + " " + copyright);
+
+      const string software =
+          "Almond Bread (https://github.com/eobrain/almondbread)";
+      addText(&state, "Software", software);
+
+      char hostname[100];
+      if (gethostname(hostname, (sizeof hostname) - 1) != 0) {
+        strcpy(hostname, "(unknown host}");
+      }
+      addText(&state, "Source", hostname);
+
+      addText(&state, "Comment",
+              title + "\nCopyright " + copyright + "\nCreated by " + author +
+                  "@" + hostname + " using " + software + ".\n" + description);
+
+      std::vector<unsigned char> png;
+      unsigned err = lodepng::encode(png, _pixels, params.imgWidth,
+                                     params.imgHeight, state);
+      if (err) throw err;
+
+      lodepng::save_file(png, params.outputFileName);
+
+      lodepng_info_cleanup(&state.info_png);
+    } catch (unsigned err) {
+      cerr << "encoder error " << err << ": " << lodepng_error_text(err)
            << endl;
       return false;
     }
