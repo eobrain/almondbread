@@ -24,6 +24,7 @@ using std::endl;
 using std::flush;
 using std::getenv;
 using std::map;
+using std::norm;
 using std::ofstream;
 using std::ostream;
 using std::string;
@@ -31,6 +32,7 @@ using std::stringstream;
 using std::thread;
 using std::unordered_map;
 using std::vector;
+using std::numeric_limits;
 
 #ifndef NDEBUG
 #define P(x) \
@@ -41,8 +43,8 @@ using std::vector;
 
 namespace {
 
-constexpr int INT_MIN = std::numeric_limits<int>::min();
-constexpr int INT_MAX = std::numeric_limits<int>::max();
+constexpr int INT_MIN = numeric_limits<int>::min();
+constexpr int INT_MAX = numeric_limits<int>::max();
 
 struct Params {
   int imgWidth = 1400;
@@ -195,7 +197,7 @@ class Image {
               title + "\nCopyright " + copyright + "\nCreated by " + author +
                   "@" + hostname + " using " + software + ".\n" + description);
 
-      std::vector<unsigned char> png;
+      vector<unsigned char> png;
       unsigned err = lodepng::encode(png, _pixels, params.imgWidth,
                                      params.imgHeight, state);
       if (err) throw err;
@@ -237,11 +239,11 @@ array<double, 3> hsv2rgb(double h, double s, double v) {
 
 constexpr unsigned char clamp(int color) { return color >= 255 ? 255 : color; }
 
-int iterations(int maxIterationCount, complex<double> c) {
+int iterations(int maxIterationCount, const complex<double> &c) {
   complex<double> z = 0;
   for (int i = 0; i < maxIterationCount; ++i) {
     z = z * z + c;
-    if (std::abs(z) > 2) {
+    if (abs(z) > 2) {
       return i;
     }
   }
@@ -260,7 +262,6 @@ const int COLOR_SCALE = 10;
 
 void setColor(const Stats &stats, Image *img, int maxIterationCount, int ix,
               int iy) {
-  // std::cout << "c=" << c << std::endl;
   int iters = img->iterations(ix, iy);
   if (iters == maxIterationCount) {
     img->pixel(ix, iy, 0) = 0;
@@ -270,10 +271,6 @@ void setColor(const Stats &stats, Image *img, int maxIterationCount, int ix,
     return;
   }
 
-  // double value = (double)iters / maxIterationCount;
-  // double value = log(iters) / log(maxIterationCount);
-  // double value = log(stats.mapped(iters)) / log(stats.range());
-  // double value = (stats.normalize(iters) + stats.percentile(iters)) / 2;
   double value = stats.percentile(iters);
   value *= value;
   auto rgb = hsv2rgb(250 * value, value, 1 - value / 2);
