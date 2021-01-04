@@ -253,7 +253,7 @@ int iterations(int maxIterationCount, complex<double> c) {
 int iterations(const Params &params, int ix, int iy) {
   double scale = params.width / params.imgWidth;
   double cRe = scale * (ix - params.imgWidth / 2) + params.centerRe;
-  double cIm = scale * (iy - params.imgHeight / 2) + params.centerIm;
+  double cIm = scale * (params.imgHeight / 2 - iy) + params.centerIm;
   complex<double> c = {cRe, cIm};
   return iterations(params.maxIterationCount, c);
 }
