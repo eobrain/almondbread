@@ -201,8 +201,6 @@ class Image {
       if (err) throw err;
 
       lodepng::save_file(png, params.outputFileName);
-
-      lodepng_info_cleanup(&state.info_png);
     } catch (unsigned err) {
       cerr << "encoder error " << err << ": " << lodepng_error_text(err)
            << endl;
