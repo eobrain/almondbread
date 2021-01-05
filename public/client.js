@@ -58,7 +58,6 @@ const doit = () => {
     const viewPortTop = y - height / 2
     const newX = viewPortLeft + offsetX * scale
     const newY = viewPortTop + (imgHeight - offsetY) * scale
-    console.log({ offsetX, offsetY, newX, newY })
     const magnification = magnificationElement.valueAsNumber
     const zoom = 1 << magnification
     zoomElement.innerText = zoom
