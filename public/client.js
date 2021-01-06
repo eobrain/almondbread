@@ -1,7 +1,8 @@
 /* global
  imgElement,
- magnificationElement,
  zoomElement,
+ magnificationElement,
+ videoElement,
  xElement,
  yElement,
  wElement,
@@ -35,6 +36,7 @@ const doit = () => {
   iElement.innerText = i
   console.log('values:', x, y, w, i)
   busy = true
+  videoElement.setAttribute('href', `/video?x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.className = 'cursor-busy'
   imgElement.setAttribute('src', `/image?x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.onload = () => {

@@ -7,7 +7,7 @@ deps=["mandelbrot", "clean"]
 exec="node server.js"
 
 [clean]
-exec="rm -f public/cache/mandelbrot_*.png"
+exec="rm -f public/cache/mandelbrot_*.png public/cache/video_*.*"
 
 [display]
 deps=["%.png"]
