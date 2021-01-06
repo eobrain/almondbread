@@ -2,7 +2,6 @@ import express from 'express'
 import { existsSync } from 'fs'
 import { spawn } from 'child_process'
 import { imgWidth, imgHeight } from './public/common.js'
-import { executionAsyncResource } from 'async_hooks'
 
 const app = express()
 const port = 3000

@@ -3,7 +3,6 @@
 #include <unistd.h>
 
 #include <array>
-#include <complex>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -18,13 +17,12 @@
 
 using std::array;
 using std::cerr;
-using std::complex;
 using std::cout;
 using std::endl;
 using std::flush;
 using std::getenv;
 using std::map;
-using std::norm;
+using std::numeric_limits;
 using std::ofstream;
 using std::ostream;
 using std::string;
@@ -32,7 +30,6 @@ using std::stringstream;
 using std::thread;
 using std::unordered_map;
 using std::vector;
-using std::numeric_limits;
 
 #ifndef NDEBUG
 #define P(x) \
@@ -239,13 +236,21 @@ array<double, 3> hsv2rgb(double h, double s, double v) {
 
 constexpr unsigned char clamp(int color) { return color >= 255 ? 255 : color; }
 
-int iterations(int maxIterationCount, const complex<double> &c) {
-  complex<double> z = 0;
+int iterations(int maxIterationCount, double cRe, double cIm) {
+  double zRe = 0;
+  double zIm = 0;
+  double zRe2 = 0;
+  double zIm2 = 0;
   for (int i = 0; i < maxIterationCount; ++i) {
-    z = z * z + c;
-    if (abs(z) > 2) {
+    double zReNew = zRe2 - zIm2 + cRe;
+    double zImNew = 2 * zRe * zIm + cIm;
+    zRe2 = zReNew * zReNew;
+    zIm2 = zImNew * zImNew;
+    if (zRe2 + zIm2 > 4) {
       return i;
     }
+    zRe = zReNew;
+    zIm = zImNew;
   }
   return maxIterationCount;
 }
@@ -254,8 +259,7 @@ int iterations(const Params &params, int ix, int iy) {
   double scale = params.width / params.imgWidth;
   double cRe = scale * (ix - params.imgWidth / 2) + params.centerRe;
   double cIm = scale * (params.imgHeight / 2 - iy) + params.centerIm;
-  complex<double> c = {cRe, cIm};
-  return iterations(params.maxIterationCount, c);
+  return iterations(params.maxIterationCount, cRe, cIm);
 }
 
 const int COLOR_SCALE = 10;
