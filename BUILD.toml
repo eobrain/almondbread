@@ -40,4 +40,4 @@ deps=["fixedpt_%_test"]
 exec="./$<"
 
 [test]
-deps=["test_62", "test_8", "test_1"]
+deps=["test_1", "test_8", "test_62"]
