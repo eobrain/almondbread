@@ -6,3 +6,4 @@
 /public/cache/mandelbrot_*.png
 /histogram.csv
 /mandelbrot_debug
+/fixedpt_*_test

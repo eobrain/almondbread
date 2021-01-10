@@ -3,6 +3,7 @@
  zoomElement,
  magnificationElement,
  videoElement,
+ negPowerOf2Element,
  xElement,
  yElement,
  wElement,
@@ -27,18 +28,19 @@ const setIterations = () => {
 
 const doit = () => {
   if (!window.location.hash) {
-    window.location = '#0_0_8_1000'
+    window.location = '#20_0_0_8388608_1000'
   }
-  const [x, y, w, i] = window.location.hash.substr(1).split('_')
+  const [p, x, y, w, i] = window.location.hash.substr(1).split('_')
+  negPowerOf2Element.innerText = p
   xElement.innerText = x
   yElement.innerText = y
   wElement.innerText = w
   iElement.innerText = i
   console.log('values:', x, y, w, i)
   busy = true
-  videoElement.setAttribute('href', `/video?x=${x}&y=${y}&w=${w}&i=${i}`)
+  videoElement.setAttribute('href', `/video?p=${p}&x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.className = 'cursor-busy'
-  imgElement.setAttribute('src', `/image?x=${x}&y=${y}&w=${w}&i=${i}`)
+  imgElement.setAttribute('src', `/image?p=${p}&x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.onload = () => {
     setCursorMagnification()
     busy = false
@@ -63,7 +65,7 @@ const doit = () => {
     const magnification = magnificationElement.valueAsNumber
     const zoom = 1 << magnification
     zoomElement.innerText = zoom
-    window.location = `#${newX}_${newY}_${w / zoom}_${iNewElement.innerText}`
+    window.location = `#${p}_${newX}_${newY}_${w}_${iNewElement.innerText}`
     doit()
   }
 }

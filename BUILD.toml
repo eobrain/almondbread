@@ -1,3 +1,5 @@
+
+
 [serve]
 deps=["mandelbrot"]
 exec="node server.js"
@@ -22,10 +24,20 @@ deps=["mandelbrot_debug"]
 exec="valgrind ./$< -W 140 -H 90 -i 10"
 
 [mandelbrot]
-deps=["main.cc", "lodepng.cpp"]
-exec="g++ -DNDEBUG -O3 -Wall $+ -pthread -o $@"
+deps=["main.cc", "fixedpt.cc", "lodepng.cpp", "fixedpt.h", "lodepng.h"]
+exec="g++ -DNDEBUG -O3 -Wall main.cc fixedpt.cc lodepng.cpp -pthread -o $@"
 
 [mandelbrot_debug]
-deps=["main.cc", "lodepng.cpp"]
-exec="g++ -g -Wall $+ -pthread -o $@"
+deps=["main.cc", "fixedpt.cc", "lodepng.cpp", "fixedpt.h", "lodepng.h"]
+exec="g++ -g -Wall main.cc fixedpt.cc lodepng.cpp -pthread -o $@"
 
+["fixedpt_%_test"]
+deps=["fixedpt_%_test.cc", "fixedpt.cc", "fixedpt.h"]
+exec="g++ -g -Wall fixedpt_%_test.cc fixedpt.cc /usr/lib/libgtest_main.a /usr/lib/libgtest.a  -pthread -o $@"
+
+["test_%"]
+deps=["fixedpt_%_test"]
+exec="./$<"
+
+[test]
+deps=["test_62", "test_8", "test_1"]

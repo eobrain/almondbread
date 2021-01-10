@@ -5,7 +5,6 @@
 #include <array>
 #include <cstdlib>
 #include <fstream>
-#include <iostream>
 #include <limits>
 #include <map>
 #include <sstream>
@@ -13,8 +12,10 @@
 #include <unordered_map>
 #include <vector>
 
+#include "fixedpt.h"
 #include "lodepng.h"
 
+using fixed::Num;
 using std::array;
 using std::cerr;
 using std::cout;
@@ -46,11 +47,12 @@ constexpr int INT_MAX = numeric_limits<int>::max();
 struct Params {
   int imgWidth = 1400;
   int imgHeight = 900;
-  double centerRe = -0.5671;
-  double centerIm = -0.56698;
-  double width = 0.2;
+  Num centerRe = -0.5671L;
+  Num centerIm = -0.56698L;
+  Num width = 0.2L;
   int maxIterationCount = 10000;
   const char *outputFileName = "mandelbrot.png";
+  Params() : centerRe(-0.5671L), centerIm(-0.56698L), width(0.2L) {}
 };
 ostream &operator<<(ostream &out, const Params &p) {
   out << "imgWidth=" << p.imgWidth << " imgHeight=" << p.imgHeight
@@ -236,14 +238,14 @@ array<double, 3> hsv2rgb(double h, double s, double v) {
 
 constexpr unsigned char clamp(int color) { return color >= 255 ? 255 : color; }
 
-int iterations(int maxIterationCount, double cRe, double cIm) {
-  double zRe = 0;
-  double zIm = 0;
-  double zRe2 = 0;
-  double zIm2 = 0;
+int iterations(int maxIterationCount, const Num &cRe, const Num &cIm) {
+  Num zRe(0LL);
+  Num zIm(0LL);
+  Num zRe2(0LL);
+  Num zIm2(0LL);
   for (int i = 0; i < maxIterationCount; ++i) {
-    double zReNew = zRe2 - zIm2 + cRe;
-    double zImNew = 2 * zRe * zIm + cIm;
+    Num zReNew(zRe2 - zIm2 + cRe);
+    Num zImNew(2 * zRe * zIm + cIm);
     zRe2 = zReNew * zReNew;
     zIm2 = zImNew * zImNew;
     if (zRe2 + zIm2 > 4) {
@@ -256,9 +258,9 @@ int iterations(int maxIterationCount, double cRe, double cIm) {
 }
 
 int iterations(const Params &params, int ix, int iy) {
-  double scale = params.width / params.imgWidth;
-  double cRe = scale * (ix - params.imgWidth / 2) + params.centerRe;
-  double cIm = scale * (params.imgHeight / 2 - iy) + params.centerIm;
+  Num scale = params.width / params.imgWidth;
+  Num cRe = scale * (ix - params.imgWidth / 2) + params.centerRe;
+  Num cIm = scale * (params.imgHeight / 2 - iy) + params.centerIm;
   return iterations(params.maxIterationCount, cRe, cIm);
 }
 
@@ -298,6 +300,7 @@ void threadWorker(const Params &params, Image *img, int mod) {
 
 int main(int argc, char *const argv[]) {
   P(threadCount);
+  Num::init(10);
   Params params;
 
   int opt;
@@ -310,13 +313,13 @@ int main(int argc, char *const argv[]) {
         params.imgHeight = atoi(optarg);
         break;
       case 'x':
-        params.centerRe = atof(optarg);
+        params.centerRe = Num(optarg);
         break;
       case 'y':
-        params.centerIm = atof(optarg);
+        params.centerIm = Num(optarg);
         break;
       case 'w':
-        params.width = atof(optarg);
+        params.width = Num(optarg);
         break;
       case 'i':
         params.maxIterationCount = atoi(optarg);
