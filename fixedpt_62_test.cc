@@ -11,7 +11,7 @@ namespace {
 long double number(const string& s) { return strtold(s.c_str(), NULL); }
 
 TEST(FixedTest, String) {
-  Num smallest(2.1684043e-19);
+  Num smallest("2.1684043e-19");
   Num small(3.90625e-3);
   Num bigger(0.01953125);
   Num half(0.5);
@@ -24,7 +24,7 @@ TEST(FixedTest, String) {
 }
 
 TEST(FixedTest, StringAsFloating) {
-  Num smallest(2.1684043e-19);
+  Num smallest("2.1684043e-19");
   Num small(3.90625e-3);
   Num bigger(0.01953125);
   EXPECT_EQ(number(string(smallest)), 2.1684043e-19) << "Smallest";
@@ -53,8 +53,8 @@ TEST(FixedTest, MultiplyInteger) {
 }
 
 TEST(FixedTest, Add) {
-  Num a(0.25); 
-  Num b(0.125); 
+  Num a(0.25);
+  Num b(0.125);
   Num ab = a + b;
   EXPECT_EQ(string(ab), "3.75e-1");
 }
@@ -84,16 +84,18 @@ TEST(FixedTest, DivideInteger) {
   EXPECT_EQ(string(ab), "1.25e-1");
 }
 
-/*TEST(FixedTest, Parse) {
-  Num smallest("3.90625e-3");  // 1/256
-  Num bigger("0.01953125");    // 5/256
-  Num half("0.5");             // 128/256
+TEST(FixedTest, Parse) {
+  Num smallest("2.1684043e-19");
+  Num smaller("3.90625e-3");
+  Num bigger("0.01953125");
+  Num half("0.5");
   Num integer("3.0");
-  EXPECT_EQ(string(smallest), "3.90625e-3") << "Smallest";
+  EXPECT_EQ(string(smallest), "2.1684043e-19") << "Smallest";
+  EXPECT_EQ(string(smaller), "3.90625e-3") << "Smallest";
   EXPECT_EQ(string(bigger), "1.953125e-2") << "Bigger";
   EXPECT_EQ(string(half), "5e-1") << "Half";
   EXPECT_EQ(string(integer), "3") << "Integer";
-}*/
+}
 
 }  // namespace
 

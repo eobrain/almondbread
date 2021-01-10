@@ -80,7 +80,7 @@ TEST(FixedTest, DivideInteger) {
   EXPECT_EQ(string(ab), "1.25e-1");
 }
 
-/*TEST(FixedTest, Parse) {
+TEST(FixedTest, Parse) {
   Num smallest("3.90625e-3");  // 1/256
   Num bigger("0.01953125");    // 5/256
   Num half("0.5");             // 128/256
@@ -89,7 +89,7 @@ TEST(FixedTest, DivideInteger) {
   EXPECT_EQ(string(bigger), "1.953125e-2") << "Bigger";
   EXPECT_EQ(string(half), "5e-1") << "Half";
   EXPECT_EQ(string(integer), "3") << "Integer";
-}*/
+}
 
 }  // namespace
 

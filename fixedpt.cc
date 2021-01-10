@@ -2,10 +2,13 @@
 
 #include <limits>
 #include <regex>
+#include <stdexcept>
 
 #ifndef NDEBUG
-#define P(x) \
-  std::cout << __FILE__ << ":" << __LINE__ << ":" << #x << "=" << x << std::endl
+#define P(x)                                                           \
+  (std::cout << __FILE__ << ":" << __LINE__ << ":" << #x << "=" << (x) \
+             << std::endl,                                             \
+   x)
 #else
 #define P(x)
 #endif
@@ -14,10 +17,12 @@ namespace fixed {
 
 using std::cout;
 using std::endl;
+using std::invalid_argument;
 using std::numeric_limits;
 using std::regex;
 using std::regex_match;
 using std::regex_replace;
+using std::smatch;
 using std::string;
 using std::to_string;
 
@@ -27,6 +32,33 @@ regex trimTrailingFractionalZeros("^(.*)(\\..*[^0])0+$");
 regex canAddPoint("^([^\1.]+)([^\1.])$");
 regex canMovePoint("^(.+)(.)\\.(.+)$");
 regex canRemoveZero("^([^\\.]+)0$");
+regex floatingLiteralE("^(\\-?[0-9]+)\\.([0-9]+)e([+-]?[0-9]+)$");
+regex floatingLiteral("^(\\-?[0-9]+)\\.([0-9]+)$");
+regex integerLiteral("^(\\-?[0-9]+)$");
+
+void splitNumber(const string &s, string *decimal, string *fraction,
+                 string *exponent) {
+  smatch match;
+  if (regex_match(s, match, floatingLiteralE)) {
+    *decimal = match[1];
+    *fraction = match[2];
+    *exponent = match[3];
+    return;
+  }
+  if (regex_match(s, match, floatingLiteral)) {
+    *decimal = match[1];
+    *fraction = match[2];
+    *exponent = "0";
+    return;
+  }
+  if (regex_match(s, match, integerLiteral)) {
+    *decimal = match[1];
+    *fraction = "";
+    *exponent = "0";
+    return;
+  }
+  throw invalid_argument(s);
+}
 }  // namespace
 
 unsigned Num::_negPowerOf2 = 0;
@@ -39,14 +71,34 @@ std::ostream &operator<<(std::ostream &out, const Num &n) {
 }
 
 __int128 Num::parse(const string &s) {
-  size_t sepPos = s.find("e");
-  if (sepPos == string::npos) {
-    return atoll(s.c_str()) << _negPowerOf2;
+  P(s);
+  string decimal;
+  string fraction;
+  string exponent;
+  splitNumber(s, &decimal, &fraction, &exponent);
+
+  string mantissaS = decimal + fraction;
+  unsigned negExponent10 = -atoi(exponent.c_str()) + fraction.length();
+  P(negExponent10);
+  __int128 mantissa = 0;
+  for (char ch : mantissaS) {
+    mantissa = (mantissa * 10) + (ch - '0');
+    P((long long)mantissa);
   }
-  __int128 mantissa = atoll(s.substr(0, sepPos).c_str());
-  unsigned exponent10 = atoll(s.substr(sepPos + 1, string::npos).c_str());
-  long double scale = powl(2, _negPowerOf2 - exponent10);
-  return mantissa * scale;
+  unsigned closestNegPowerOf10 = llrintl(_negPowerOf2 * M_LN2l / M_LN10l) + 1;
+  P(closestNegPowerOf10);
+  while (negExponent10 < closestNegPowerOf10) {
+    ++negExponent10;
+    mantissa *= 10;
+  }
+  P(negExponent10);
+  P((long long)mantissa);
+
+  // long double scale = powl(2, _negPowerOf2 - negExponent10 * M_LN10l /
+  // M_LN2l);
+  long double scale = powl(2, _negPowerOf2) / powl(10, negExponent10);
+  P(scale);
+  return P(mantissa * scale);
 }
 
 Num::operator string() const {
