@@ -28,17 +28,24 @@ TEST(FixedTest, StringAsFloating) {
   EXPECT_EQ(number(string(bigger)), 0.01953125L) << "Bigger";
 }
 
-TEST(FixedTest, Multiply) {
-  Num a(0.25);    // 64/256
-  Num b(0.125);   // 32/256
+TEST(FixedTest, Multiply1) {
+  Num a(0.25);     // 64/256
+  Num b(0.125);    // 32/256
   Num ab = a * b;  // 1/32 = 0.03125
   EXPECT_EQ(string(ab), "3.125e-2");
 }
 
+TEST(FixedTest, Multiply2) {
+  Num a(0.02);  
+  Num b(0.03);  
+  Num ab = a * b;  
+  EXPECT_EQ(string(ab), "6e-4");
+}
+
 TEST(FixedTest, MultiplyUnderflow) {
-  Num a(1.953125e-2);  // 5/256
-  Num b(7.8125e-3);    // 2/256
-  Num ab = a * b;       // 0.00015258789 if floating point
+  Num a(5e-8);  // 5/256
+  Num b(2e-8);  // 2/256
+  Num ab = a * b;
   EXPECT_EQ(string(ab), "0");
 }
 
@@ -81,9 +88,9 @@ TEST(FixedTest, DivideInteger) {
 }
 
 TEST(FixedTest, Parse) {
-  Num smallest("3.90625e-3");  // 1/256
-  Num bigger("0.01953125");    // 5/256
-  Num half("0.5");             // 128/256
+  Num smallest("3.90625e-3");
+  Num bigger("0.01953125");
+  Num half("0.5");
   Num integer("3.0");
   EXPECT_EQ(string(smallest), "3.90625e-3") << "Smallest";
   EXPECT_EQ(string(bigger), "1.953125e-2") << "Bigger";

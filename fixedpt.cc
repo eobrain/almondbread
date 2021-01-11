@@ -59,19 +59,41 @@ void splitNumber(const string &s, string *decimal, string *fraction,
   }
   throw invalid_argument(s);
 }
+
+string toString(__int128 i) {
+  string sign = "";
+  if (i < 0) {
+    sign = "-";
+    i = -i;
+  }
+  P(sign);
+  P((long long)(i >> 64));
+  P((long long)i);
+  if (i == 0) {
+    return "0";
+  }
+  string result;
+  while (i > 0) {
+    result = string(1, '0' + char(i % 10)) + result;
+    i /= 10;
+  }
+  P(result);
+  return sign + result;
+}
+
 }  // namespace
 
-unsigned Num::_negPowerOf2 = 0;
+unsigned Num::_negExponent = 0;
 Num *Num::_lowest = NULL;
 Num *Num::_min = NULL;
 Num *Num::_max = NULL;
+__int128 Num::_scale = 1;
 
 std::ostream &operator<<(std::ostream &out, const Num &n) {
   return out << string(n);
 }
 
 __int128 Num::parse(const string &s) {
-  P(s);
   string decimal;
   string fraction;
   string exponent;
@@ -79,74 +101,58 @@ __int128 Num::parse(const string &s) {
 
   string mantissaS = decimal + fraction;
   unsigned negExponent10 = -atoi(exponent.c_str()) + fraction.length();
-  P(negExponent10);
   __int128 mantissa = 0;
   for (char ch : mantissaS) {
     mantissa = (mantissa * 10) + (ch - '0');
-    P((long long)mantissa);
   }
-  unsigned closestNegPowerOf10 = llrintl(_negPowerOf2 * M_LN2l / M_LN10l) + 1;
-  P(closestNegPowerOf10);
-  while (negExponent10 < closestNegPowerOf10) {
+  while (negExponent10 > _negExponent) {
+    --negExponent10;
+    mantissa /= 10;
+  }
+  while (negExponent10 < _negExponent) {
     ++negExponent10;
     mantissa *= 10;
   }
-  P(negExponent10);
-  P((long long)mantissa);
-
-  // long double scale = powl(2, _negPowerOf2 - negExponent10 * M_LN10l /
-  // M_LN2l);
-  long double scale = powl(2, _negPowerOf2) / powl(10, negExponent10);
-  P(scale);
-  return P(mantissa * scale);
+  return mantissa;
 }
 
 Num::operator string() const {
   if (_mantissa == 0) {
     return "0";
   }
-  unsigned negPowerOf10 = llrintl(_negPowerOf2 * M_LN2l / M_LN10l) + 1;
+  int powerOf10 = -_negExponent;
 
-  long double mantissaAdj =
-      _mantissa * powl(10, negPowerOf10) / powl(2, _negPowerOf2);
-  string mantissaS = to_string(mantissaAdj);
-
-  auto shift = [&mantissaS, &negPowerOf10](regex patt, string replace) {
-    while (regex_match(mantissaS, patt) && negPowerOf10 > 0) {
-      mantissaS = regex_replace(mantissaS, patt, replace);
-      --negPowerOf10;
-    }
-  };
-  auto simplify = [&mantissaS](const regex &patt, string replace) {
-    while (regex_match(mantissaS, patt)) {
-      mantissaS = regex_replace(mantissaS, patt, replace);
-    }
-  };
-
-  simplify(trimToInteger, "$1");
-  shift(canAddPoint, "$1.$2$3");
-  simplify(trimTrailingFractionalZeros, "$1$2");
-  shift(canMovePoint, "$1.$2$3");
-  shift(canRemoveZero, "$1");
-  simplify(trimToInteger, "$1");
-  simplify(trimTrailingFractionalZeros, "$1$2");
-  if (negPowerOf10 == 0) {
+  string mantissaS = toString(_mantissa);
+  unsigned n = mantissaS.length();
+  P(mantissaS);
+  if (n > 1) {
+    powerOf10 += n - 1;
+    mantissaS =
+        mantissaS.substr(0, 1) + '.' + mantissaS.substr(1, string::npos);
+    P(mantissaS);
+  }
+  mantissaS = regex_replace(mantissaS, trimTrailingFractionalZeros, "$1$2");
+  mantissaS = regex_replace(mantissaS, trimToInteger, "$1");
+  if (powerOf10 == 0) {
     return mantissaS;
   }
-  return mantissaS + "e-" + to_string(negPowerOf10);
+  return mantissaS + "e" + to_string(powerOf10);
 }
 
-void Num::init(unsigned negPowerOf2) {
-  assert(!_negPowerOf2);
-  assert(negPowerOf2);
-  _negPowerOf2 = negPowerOf2;
+void Num::init(unsigned negExponent) {
+  assert(!_negExponent);
+  assert(negExponent);
+  _negExponent = negExponent;
+  for (unsigned i = 0; i < _negExponent; ++i) {
+    _scale *= 10;
+  }
   _lowest = new Num(0);
   _min = new Num(0);
   _max = new Num(0);
   _lowest->_mantissa = numeric_limits<__int128>::lowest();
   _min->_mantissa = 1;
   _max->_mantissa = numeric_limits<__int128>::max();
-  cout << "fixed::Num scaled to 2^-" << _negPowerOf2 << "\n"
+  cout << "fixed::Num scaled to 2^-" << _negExponent << "\n"
        << " " << numeric_limits<__int128>::digits << " bits,"
        << " " << numeric_limits<__int128>::digits10 << " decimal digits\n"
        << " lowest = " << lowest() << "\n"

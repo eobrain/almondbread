@@ -11,32 +11,33 @@
 namespace fixed {
 
 class Num {
-  static unsigned _negPowerOf2;
+  static unsigned _negExponent;
+  static __int128 _scale;
   static Num *_lowest;
   static Num *_min;
   static Num *_max;
   __int128 _mantissa;
-  static __int128 mantissa(int value) { return value << _negPowerOf2; }
-  static __int128 mantissa(__int128 value) { return value << _negPowerOf2; }
+  static __int128 mantissa(__int128 value) { return value * _scale; }
+  static __int128 mantissa(int value) { return value * _scale; }
   static __int128 mantissa(long double value) {
-    return llrintl(value * (1 << _negPowerOf2));
+    return llrintl(value * powl(10, _negExponent));
   }
   static __int128 mantissa(double value) {
-    return llrint(value * (1 << _negPowerOf2));
+    return llrint(value * pow(10, _negExponent));
   }
   static __int128 parse(const std::string &s);
 
  public:
-  static void init(unsigned negPowerOf2);
+  static void init(unsigned negExponent);
   static const Num &lowest() { return *_lowest; }
   static const Num &min() { return *_min; }
   static const Num &max() { return *_max; }
   // Num(const Num &b) : _mantissa(b._mantissa) {}
   // Num(const Num &&b) : _mantissa(std::exchange(b._mantissa, 0LL)) {}
-  Num(int value) : _mantissa(mantissa(value)) { assert(_negPowerOf2); }
-  Num(long double value) : _mantissa(mantissa(value)) { assert(_negPowerOf2); }
-  Num(double value) : _mantissa(mantissa(value)) { assert(_negPowerOf2); }
-  Num(const std::string &s) : _mantissa(parse(s)) { assert(_negPowerOf2); }
+  Num(int value) : _mantissa(mantissa(value)) { assert(_negExponent); }
+  Num(long double value) : _mantissa(mantissa(value)) { assert(_negExponent); }
+  Num(double value) : _mantissa(mantissa(value)) { assert(_negExponent); }
+  Num(const std::string &s) : _mantissa(parse(s)) { assert(_negExponent); }
   operator std::string() const;
   // friend Num operator*(__int128 a, const Num &b);
   Num &operator+=(const Num &b) {
@@ -56,8 +57,7 @@ class Num {
     return *this;
   };
   Num &operator*=(const Num &b) {
-    _mantissa *= b._mantissa;
-    _mantissa >>= _negPowerOf2;
+    _mantissa = _mantissa * b._mantissa / _scale;
     return *this;
   };
   Num &operator*=(__int128 b) {

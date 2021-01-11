@@ -12,11 +12,11 @@ long double number(const string& s) { return strtold(s.c_str(), NULL); }
 
 TEST(FixedTest, String) {
   Num five(5);
-  Num half(0.5);
+  Num half(0.1);
   Num twenty(20);
   EXPECT_EQ(string(five), "5") << "Num of integer";
-  EXPECT_EQ(string(half), "5e-1") << "Num of floting point";
-  EXPECT_EQ(string(twenty), "20") << "Num of larger integer";
+  EXPECT_EQ(string(half), "1e-1") << "Num of floting point";
+  EXPECT_EQ(string(twenty), "2e1") << "Num of larger integer";
 }
 
 TEST(FixedTest, StringAsFloating) {
@@ -30,12 +30,12 @@ TEST(FixedTest, Multiply) {
   Num five(5);
   Num four(4);
   Num twenty = five * four;
-  EXPECT_EQ(string(twenty), "20");
+  EXPECT_EQ(string(twenty), "2e1");
 }
 }  // namespace
 
 int main(int argc, char** argv) {
   InitGoogleTest(&argc, argv);
-  Num::init(1);  // numbers scaled to 0.5
+  Num::init(1);  // numbers scaled to 0.1
   return RUN_ALL_TESTS();
 }
