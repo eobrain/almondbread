@@ -60,15 +60,7 @@ void splitNumber(const string &s, string *decimal, string *fraction,
   throw invalid_argument(s);
 }
 
-string toString(__int128 i) {
-  string sign = "";
-  if (i < 0) {
-    sign = "-";
-    i = -i;
-  }
-  P(sign);
-  P((long long)(i >> 64));
-  P((long long)i);
+string toString(long long i) {
   if (i == 0) {
     return "0";
   }
@@ -77,8 +69,7 @@ string toString(__int128 i) {
     result = string(1, '0' + char(i % 10)) + result;
     i /= 10;
   }
-  P(result);
-  return sign + result;
+  return result;
 }
 
 }  // namespace
@@ -87,13 +78,13 @@ unsigned Num::_negExponent = 0;
 Num *Num::_lowest = NULL;
 Num *Num::_min = NULL;
 Num *Num::_max = NULL;
-__int128 Num::_scale = 1;
+long long Num::_scale = 1;
 
 std::ostream &operator<<(std::ostream &out, const Num &n) {
   return out << string(n);
 }
 
-__int128 Num::parse(const string &s) {
+long long Num::parse(const string &s) {
   string decimal;
   string fraction;
   string exponent;
@@ -101,7 +92,7 @@ __int128 Num::parse(const string &s) {
 
   string mantissaS = decimal + fraction;
   unsigned negExponent10 = -atoi(exponent.c_str()) + fraction.length();
-  __int128 mantissa = 0;
+  long long mantissa = 0;
   for (char ch : mantissaS) {
     mantissa = (mantissa * 10) + (ch - '0');
   }
@@ -122,17 +113,22 @@ Num::operator string() const {
   }
   int powerOf10 = -_negExponent;
 
-  string mantissaS = toString(_mantissa);
-  unsigned n = mantissaS.length();
+  string mantissaS = toString(abs(_mantissa));
+  P(_mantissa);
   P(mantissaS);
+  unsigned n = mantissaS.length();
   if (n > 1) {
     powerOf10 += n - 1;
     mantissaS =
         mantissaS.substr(0, 1) + '.' + mantissaS.substr(1, string::npos);
-    P(mantissaS);
   }
+  P(mantissaS);
   mantissaS = regex_replace(mantissaS, trimTrailingFractionalZeros, "$1$2");
   mantissaS = regex_replace(mantissaS, trimToInteger, "$1");
+  P(mantissaS);
+  if (_mantissa < 0) {
+    mantissaS = "-" + mantissaS;
+  }
   if (powerOf10 == 0) {
     return mantissaS;
   }
@@ -149,12 +145,12 @@ void Num::init(unsigned negExponent) {
   _lowest = new Num(0);
   _min = new Num(0);
   _max = new Num(0);
-  _lowest->_mantissa = numeric_limits<__int128>::lowest();
+  _lowest->_mantissa = numeric_limits<long long>::lowest();
   _min->_mantissa = 1;
-  _max->_mantissa = numeric_limits<__int128>::max();
+  _max->_mantissa = numeric_limits<long long>::max();
   cout << "fixed::Num scaled to 2^-" << _negExponent << "\n"
-       << " " << numeric_limits<__int128>::digits << " bits,"
-       << " " << numeric_limits<__int128>::digits10 << " decimal digits\n"
+       << " " << numeric_limits<long long>::digits << " bits,"
+       << " " << numeric_limits<long long>::digits10 << " decimal digits\n"
        << " lowest = " << lowest() << "\n"
        << " min    = " << min() << "\n"
        << " max    = " << max() << endl;
