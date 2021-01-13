@@ -32,14 +32,22 @@ class Num {
   static const Num &lowest() { return *_lowest; }
   static const Num &min() { return *_min; }
   static const Num &max() { return *_max; }
-  // Num(const Num &b) : _mantissa(b._mantissa) {}
+  Num(const Num &b) : _mantissa(b._mantissa) {}
   // Num(const Num &&b) : _mantissa(std::exchange(b._mantissa, 0LL)) {}
+  Num(const Num &&b) : _mantissa(b._mantissa) {}
   Num(int value) : _mantissa(mantissa(value)) { assert(_negExponent); }
   Num(long double value) : _mantissa(mantissa(value)) { assert(_negExponent); }
   Num(double value) : _mantissa(mantissa(value)) { assert(_negExponent); }
   Num(const std::string &s) : _mantissa(parse(s)) { assert(_negExponent); }
   operator std::string() const;
-  // friend Num operator*(long long a, const Num &b);
+  Num &operator=(const Num &other) {
+    _mantissa = other._mantissa;
+    return *this;
+  }
+  Num &operator=(Num &&other) {
+    _mantissa = std::move(other._mantissa);
+    return *this;
+  }
   Num &operator+=(const Num &b) {
     _mantissa += b._mantissa;
     return *this;
@@ -84,6 +92,7 @@ class Num {
 
   bool operator>(long long b) const { return _mantissa > mantissa(b); }
 };
+inline Num operator+(int a, const Num &b) { return Num(b) += a; }
 template <typename T>
 inline Num operator+(const Num &a, const T &b) {
   return Num(a) += b;
