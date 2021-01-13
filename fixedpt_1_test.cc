@@ -14,9 +14,9 @@ TEST(FixedTest, String) {
   Num five(5);
   Num half(0.1);
   Num twenty(20);
-  EXPECT_EQ(string(five), "5") << "Num of integer";
+  EXPECT_EQ(string(five), "50e-1") << "Num of integer";
   EXPECT_EQ(string(half), "1e-1") << "Num of floting point";
-  EXPECT_EQ(string(twenty), "2e1") << "Num of larger integer";
+  EXPECT_EQ(string(twenty), "200e-1") << "Num of larger integer";
 }
 
 TEST(FixedTest, StringAsFloating) {
@@ -30,7 +30,7 @@ TEST(FixedTest, Multiply) {
   Num five(5);
   Num four(4);
   Num twenty = five * four;
-  EXPECT_EQ(string(twenty), "2e1");
+  EXPECT_EQ(string(twenty), "200e-1");
 }
 }  // namespace
 

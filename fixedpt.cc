@@ -27,13 +27,13 @@ using std::string;
 using std::to_string;
 
 namespace {
-regex trimToInteger("^(.*)\\.0+$");
-regex trimTrailingFractionalZeros("^(.*)(\\..*[^0])0+$");
-regex canAddPoint("^([^\1.]+)([^\1.])$");
-regex canMovePoint("^(.+)(.)\\.(.+)$");
-regex canRemoveZero("^([^\\.]+)0$");
-regex floatingLiteralE("^(\\-?[0-9]+)\\.([0-9]+)e([+-]?[0-9]+)$");
+// (sign digits) "." (digits)  "e". (sign digits)
+regex floatingLiteralE("^(\\-?[0-9]+)\\.([0-9]+)e(-?[0-9]+)$");
+// (sign digits) "e". (sign digits)
+regex integerLiteralE("^(\\-?[0-9]+)e(-?[0-9]+)$");
+// (sign digits) "." (digits)
 regex floatingLiteral("^(\\-?[0-9]+)\\.([0-9]+)$");
+// (sign digits)
 regex integerLiteral("^(\\-?[0-9]+)$");
 
 void splitNumber(const string &s, string *decimal, string *fraction,
@@ -43,6 +43,12 @@ void splitNumber(const string &s, string *decimal, string *fraction,
     *decimal = match[1];
     *fraction = match[2];
     *exponent = match[3];
+    return;
+  }
+  if (regex_match(s, match, integerLiteralE)) {
+    *decimal = match[1];
+    *fraction = "";
+    *exponent = match[2];
     return;
   }
   if (regex_match(s, match, floatingLiteral)) {
@@ -60,17 +66,7 @@ void splitNumber(const string &s, string *decimal, string *fraction,
   throw invalid_argument(s);
 }
 
-string toString(long long i) {
-  if (i == 0) {
-    return "0";
-  }
-  string result;
-  while (i > 0) {
-    result = string(1, '0' + char(i % 10)) + result;
-    i /= 10;
-  }
-  return result;
-}
+long double number(const string &s) { return strtold(s.c_str(), NULL); }
 
 }  // namespace
 
@@ -78,10 +74,23 @@ unsigned Num::_negExponent = 0;
 Num *Num::_lowest = NULL;
 Num *Num::_min = NULL;
 Num *Num::_max = NULL;
-long long Num::_scale = 1;
+unsigned long long Num::_scale = 1;
 
 std::ostream &operator<<(std::ostream &out, const Num &n) {
   return out << string(n);
+}
+
+long long pow10(long long exp) {
+  long long base = 10;
+  long long result = 1;
+  for (;;) {
+    if (exp & 1) result *= base;
+    exp >>= 1;
+    if (!exp) break;
+    base *= base;
+  }
+
+  return result;
 }
 
 long long Num::parse(const string &s) {
@@ -92,47 +101,17 @@ long long Num::parse(const string &s) {
 
   string mantissaS = decimal + fraction;
   unsigned negExponent10 = -atoi(exponent.c_str()) + fraction.length();
-  long long mantissa = 0;
-  for (char ch : mantissaS) {
-    mantissa = (mantissa * 10) + (ch - '0');
+  if (negExponent10 < _negExponent) {
+    mantissaS += string(_negExponent - negExponent10, '0');
+  } else if (negExponent10 > _negExponent) {
+    mantissaS = mantissaS.substr(
+        0, mantissaS.length() - (negExponent10 - _negExponent));
   }
-  while (negExponent10 > _negExponent) {
-    --negExponent10;
-    mantissa /= 10;
-  }
-  while (negExponent10 < _negExponent) {
-    ++negExponent10;
-    mantissa *= 10;
-  }
-  return mantissa;
+  return atoll(mantissaS.c_str());
 }
 
 Num::operator string() const {
-  if (_mantissa == 0) {
-    return "0";
-  }
-  int powerOf10 = -_negExponent;
-
-  string mantissaS = toString(abs(_mantissa));
-  P(_mantissa);
-  P(mantissaS);
-  unsigned n = mantissaS.length();
-  if (n > 1) {
-    powerOf10 += n - 1;
-    mantissaS =
-        mantissaS.substr(0, 1) + '.' + mantissaS.substr(1, string::npos);
-  }
-  P(mantissaS);
-  mantissaS = regex_replace(mantissaS, trimTrailingFractionalZeros, "$1$2");
-  mantissaS = regex_replace(mantissaS, trimToInteger, "$1");
-  P(mantissaS);
-  if (_mantissa < 0) {
-    mantissaS = "-" + mantissaS;
-  }
-  if (powerOf10 == 0) {
-    return mantissaS;
-  }
-  return mantissaS + "e" + to_string(powerOf10);
+  return to_string(_mantissa) + "e-" + to_string(_negExponent);
 }
 
 void Num::init(unsigned negExponent) {
@@ -148,12 +127,13 @@ void Num::init(unsigned negExponent) {
   _lowest->_mantissa = numeric_limits<long long>::lowest();
   _min->_mantissa = 1;
   _max->_mantissa = numeric_limits<long long>::max();
-  cout << "fixed::Num scaled to 2^-" << _negExponent << "\n"
+  cout << "fixed::Num scaled to 10^-" << _negExponent << " = 1/" << _scale
+       << "\n"
        << " " << numeric_limits<long long>::digits << " bits,"
        << " " << numeric_limits<long long>::digits10 << " decimal digits\n"
-       << " lowest = " << lowest() << "\n"
-       << " min    = " << min() << "\n"
-       << " max    = " << max() << endl;
+       << " lowest = " << lowest() << " = " << number(string(lowest())) << "\n"
+       << " min    = " << min() << " = " << number(string(min())) << "\n"
+       << " max    = " << max() << " = " << number(string(max())) << endl;
 }
 
 }  // namespace fixed

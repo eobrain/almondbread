@@ -12,7 +12,7 @@ namespace fixed {
 
 class Num {
   static unsigned _negExponent;
-  static long long _scale;
+  static unsigned long long _scale;
   static Num *_lowest;
   static Num *_min;
   static Num *_max;
@@ -20,7 +20,7 @@ class Num {
   static long long mantissa(long long value) { return value * _scale; }
   static long long mantissa(int value) { return value * _scale; }
   static long long mantissa(long double value) {
-    return llrintl(value * powl(10, _negExponent));
+    return llrintl(value * _scale);
   }
   static long long mantissa(double value) {
     return llrint(value * pow(10, _negExponent));
@@ -57,7 +57,7 @@ class Num {
     return *this;
   };
   Num &operator*=(const Num &b) {
-    _mantissa = _mantissa * b._mantissa / _scale;
+    _mantissa = (long double)_mantissa * b._mantissa / _scale;
     return *this;
   };
   Num &operator*=(long long b) {
