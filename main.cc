@@ -239,10 +239,10 @@ array<double, 3> hsv2rgb(double h, double s, double v) {
 constexpr unsigned char clamp(int color) { return color >= 255 ? 255 : color; }
 
 int iterations(int maxIterationCount, const Num &cRe, const Num &cIm) {
-  Num zRe(0LL);
-  Num zIm(0LL);
-  Num zRe2(0LL);
-  Num zIm2(0LL);
+  Num zRe(0);
+  Num zIm(0);
+  Num zRe2(0);
+  Num zIm2(0);
   for (int i = 0; i < maxIterationCount; ++i) {
     Num zReNew(zRe2 - zIm2 + cRe);
     Num zImNew(2 * zRe * zIm + cIm);
@@ -300,7 +300,7 @@ void threadWorker(const Params &params, Image *img, int mod) {
 
 int main(int argc, char *const argv[]) {
   P(threadCount);
-  Num::init(10);
+  Num::init(17);
   Params params;
 
   int opt;
