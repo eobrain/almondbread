@@ -15,7 +15,10 @@
 #include "fixedpt.h"
 #include "lodepng.h"
 
+using fixed::init;
 using fixed::Num;
+using fixed::parse;
+using fixed::toNum;
 using std::array;
 using std::cerr;
 using std::cout;
@@ -47,12 +50,11 @@ constexpr int INT_MAX = numeric_limits<int>::max();
 struct Params {
   int imgWidth = 1400;
   int imgHeight = 900;
-  Num centerRe = -0.5671L;
-  Num centerIm = -0.56698L;
-  Num width = 0.2L;
+  Num centerRe = toNum(-0.5671L);
+  Num centerIm = toNum(-0.56698L);
+  Num width = toNum(0.2L);
   int maxIterationCount = 10000;
   const char *outputFileName = "mandelbrot.png";
-  Params() : centerRe(-0.5671L), centerIm(-0.56698L), width(0.2L) {}
 };
 ostream &operator<<(ostream &out, const Params &p) {
   out << "imgWidth=" << p.imgWidth << " imgHeight=" << p.imgHeight
@@ -239,16 +241,20 @@ array<double, 3> hsv2rgb(double h, double s, double v) {
 constexpr unsigned char clamp(int color) { return color >= 255 ? 255 : color; }
 
 int iterations(int maxIterationCount, const Num &cRe, const Num &cIm) {
-  Num zRe(0);
-  Num zIm(0);
-  Num zRe2(0);
-  Num zIm2(0);
+  P(cIm);
+  Num zRe(toNum(0));
+  Num zIm(toNum(0));
+  Num zRe2(toNum(0));
+  Num zIm2(toNum(0));
   for (int i = 0; i < maxIterationCount; ++i) {
-    Num zReNew(zRe2 - zIm2 + cRe);
-    Num zImNew(2 * zRe * zIm + cIm);
+    Num zReNew = zRe2 - zIm2 + cRe;
+    Num zImNew = zRe * zIm * 2 + cIm;
     zRe2 = zReNew * zReNew;
     zIm2 = zImNew * zImNew;
+    P(zRe2);
+    P(zIm2);
     if (zRe2 + zIm2 > 4) {
+      P(cIm);
       return i;
     }
     zRe = zReNew;
@@ -300,7 +306,7 @@ void threadWorker(const Params &params, Image *img, int mod) {
 
 int main(int argc, char *const argv[]) {
   P(threadCount);
-  Num::init(17);
+  init(17);
   Params params;
 
   int opt;
@@ -313,13 +319,13 @@ int main(int argc, char *const argv[]) {
         params.imgHeight = atoi(optarg);
         break;
       case 'x':
-        params.centerRe = Num(optarg);
+        params.centerRe = parse(optarg);
         break;
       case 'y':
-        params.centerIm = Num(optarg);
+        params.centerIm = parse(optarg);
         break;
       case 'w':
-        params.width = Num(optarg);
+        params.width = parse(optarg);
         break;
       case 'i':
         params.maxIterationCount = atoi(optarg);

@@ -68,18 +68,6 @@ void splitNumber(const string &s, string *decimal, string *fraction,
 
 long double number(const string &s) { return strtold(s.c_str(), NULL); }
 
-}  // namespace
-
-unsigned Num::_negExponent = 0;
-Num *Num::_lowest = NULL;
-Num *Num::_min = NULL;
-Num *Num::_max = NULL;
-unsigned long long Num::_scale = 1;
-
-std::ostream &operator<<(std::ostream &out, const Num &n) {
-  return out << string(n);
-}
-
 long long pow10(long long exp) {
   long long base = 10;
   long long result = 1;
@@ -92,8 +80,44 @@ long long pow10(long long exp) {
 
   return result;
 }
+}  // namespace
 
-long long Num::parse(const string &s) {
+namespace impl {
+unsigned negExponent = 0;
+unsigned long long scale = 1;
+
+}  // namespace impl
+
+Num lowest;
+Num min;
+Num max;
+
+std::ostream &operator<<(std::ostream &out, Num n) {
+  return out << strtold(toString(n).c_str(), NULL);
+}
+
+string toString(Num a) {
+  return to_string((long long)a) + "e-" + to_string(impl::negExponent);
+}
+
+void init(unsigned negExponent) {
+  assert(!impl::negExponent);
+  assert(negExponent);
+  impl::negExponent = negExponent;
+  impl::scale = pow10(impl::negExponent);
+  lowest = Num(numeric_limits<long long>::lowest());
+  min = Num(1);
+  max = Num(numeric_limits<long long>::max());
+  cout << "fixed::Num scaled to 10^-" << impl::negExponent << " = 1/"
+       << impl::scale << "\n"
+       << " " << numeric_limits<long long>::digits << " bits,"
+       << " " << numeric_limits<long long>::digits10 << " decimal digits\n"
+       << " lowest = " << lowest << " = " << number(toString(lowest)) << "\n"
+       << " min    = " << min << " = " << number(toString(min)) << "\n"
+       << " max    = " << max << " = " << number(toString(max)) << endl;
+}
+
+Num parse(const string &s) {
   string decimal;
   string fraction;
   string exponent;
@@ -101,39 +125,13 @@ long long Num::parse(const string &s) {
 
   string mantissaS = decimal + fraction;
   unsigned negExponent10 = -atoi(exponent.c_str()) + fraction.length();
-  if (negExponent10 < _negExponent) {
-    mantissaS += string(_negExponent - negExponent10, '0');
-  } else if (negExponent10 > _negExponent) {
+  if (negExponent10 < impl::negExponent) {
+    mantissaS += string(impl::negExponent - negExponent10, '0');
+  } else if (negExponent10 > impl::negExponent) {
     mantissaS = mantissaS.substr(
-        0, mantissaS.length() - (negExponent10 - _negExponent));
+        0, mantissaS.length() - (negExponent10 - impl::negExponent));
   }
-  return atoll(mantissaS.c_str());
-}
-
-Num::operator string() const {
-  return to_string(_mantissa) + "e-" + to_string(_negExponent);
-}
-
-void Num::init(unsigned negExponent) {
-  assert(!_negExponent);
-  assert(negExponent);
-  _negExponent = negExponent;
-  for (unsigned i = 0; i < _negExponent; ++i) {
-    _scale *= 10;
-  }
-  _lowest = new Num(0);
-  _min = new Num(0);
-  _max = new Num(0);
-  _lowest->_mantissa = numeric_limits<long long>::lowest();
-  _min->_mantissa = 1;
-  _max->_mantissa = numeric_limits<long long>::max();
-  cout << "fixed::Num scaled to 10^-" << _negExponent << " = 1/" << _scale
-       << "\n"
-       << " " << numeric_limits<long long>::digits << " bits,"
-       << " " << numeric_limits<long long>::digits10 << " decimal digits\n"
-       << " lowest = " << lowest() << " = " << number(string(lowest())) << "\n"
-       << " min    = " << min() << " = " << number(string(min())) << "\n"
-       << " max    = " << max() << " = " << number(string(max())) << endl;
+  return Num(atoll(mantissaS.c_str()));
 }
 
 }  // namespace fixed
