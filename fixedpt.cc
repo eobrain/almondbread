@@ -105,9 +105,9 @@ void init(unsigned negExponent) {
   assert(negExponent);
   impl::negExponent = negExponent;
   impl::scale = pow10(impl::negExponent);
-  lowest = Num(numeric_limits<long long>::lowest());
-  min = Num(1);
-  max = Num(numeric_limits<long long>::max());
+  lowest = static_cast<Num>(numeric_limits<long long>::lowest());
+  min = static_cast<Num>(1);
+  max = static_cast<Num>(numeric_limits<long long>::max());
   cout << "fixed::Num scaled to 10^-" << impl::negExponent << " = 1/"
        << impl::scale << "\n"
        << " " << numeric_limits<long long>::digits << " bits,"
@@ -131,7 +131,7 @@ Num parse(const string &s) {
     mantissaS = mantissaS.substr(
         0, mantissaS.length() - (negExponent10 - impl::negExponent));
   }
-  return Num(atoll(mantissaS.c_str()));
+  return static_cast<Num>(atoll(mantissaS.c_str()));
 }
 
 }  // namespace fixed
