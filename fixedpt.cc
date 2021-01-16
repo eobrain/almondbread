@@ -68,9 +68,34 @@ void splitNumber(const string &s, string *decimal, string *fraction,
 
 long double number(const string &s) { return strtold(s.c_str(), NULL); }
 
-long long pow10(long long exp) {
-  long long base = 10;
-  long long result = 1;
+string toString(__int128 i) {
+  string sign;
+  if (i < 0) {
+    sign = "-";
+    i = -i;
+  }
+  string result;
+  long long lo = static_cast<long long>(i & 0xffffffffffffffff);
+  long long hi = static_cast<long long>(i >> 64);
+  if (hi) {
+    return sign + to_string(hi) + to_string(lo);
+  }
+  return sign + to_string(lo);
+}
+
+string toString(unsigned __int128 i) {
+  string result;
+  long long lo = static_cast<long long>(i & 0xffffffffffffffff);
+  long long hi = static_cast<long long>(i >> 64);
+  if (hi) {
+    return to_string(hi) + to_string(lo);
+  }
+  return to_string(lo);
+}
+
+__int128 pow10(__int128 exp) {
+  __int128 base = 10;
+  __int128 result = 1;
   for (;;) {
     if (exp & 1) result *= base;
     exp >>= 1;
@@ -84,7 +109,7 @@ long long pow10(long long exp) {
 
 namespace impl {
 unsigned negExponent = 0;
-unsigned long long scale = 1;
+unsigned __int128 scale = 1;
 
 }  // namespace impl
 
@@ -97,7 +122,8 @@ std::ostream &operator<<(std::ostream &out, Num n) {
 }
 
 string toString(Num a) {
-  return to_string((long long)a) + "e-" + to_string(impl::negExponent);
+  return toString(static_cast<__int128>(a)) + "e-" +
+         to_string(impl::negExponent);
 }
 
 void init(unsigned negExponent) {
@@ -105,13 +131,13 @@ void init(unsigned negExponent) {
   assert(negExponent);
   impl::negExponent = negExponent;
   impl::scale = pow10(impl::negExponent);
-  lowest = static_cast<Num>(numeric_limits<long long>::lowest());
+  lowest = static_cast<Num>(numeric_limits<__int128>::lowest());
   min = static_cast<Num>(1);
-  max = static_cast<Num>(numeric_limits<long long>::max());
+  max = static_cast<Num>(numeric_limits<__int128>::max());
   cout << "fixed::Num scaled to 10^-" << impl::negExponent << " = 1/"
-       << impl::scale << "\n"
-       << " " << numeric_limits<long long>::digits << " bits,"
-       << " " << numeric_limits<long long>::digits10 << " decimal digits\n"
+       << toString(impl::scale) << "\n"
+       << " " << numeric_limits<__int128>::digits << " bits,"
+       << " " << numeric_limits<__int128>::digits10 << " decimal digits\n"
        << " lowest = " << lowest << " = " << number(toString(lowest)) << "\n"
        << " min    = " << min << " = " << number(toString(min)) << "\n"
        << " max    = " << max << " = " << number(toString(max)) << endl;
