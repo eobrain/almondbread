@@ -10,7 +10,7 @@
 
 namespace fixed {
 
-enum Num : long long;
+enum Num : long long { f0 = 0 };
 
 namespace impl {
 extern unsigned negExponent;

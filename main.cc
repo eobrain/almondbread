@@ -15,6 +15,7 @@
 #include "fixedpt.h"
 #include "lodepng.h"
 
+using fixed::f0;
 using fixed::init;
 using fixed::Num;
 using fixed::parse;
@@ -240,21 +241,17 @@ array<double, 3> hsv2rgb(double h, double s, double v) {
 
 constexpr unsigned char clamp(int color) { return color >= 255 ? 255 : color; }
 
-int iterations(int maxIterationCount, const Num &cRe, const Num &cIm) {
-  P(cIm);
-  Num zRe(toNum(0));
-  Num zIm(toNum(0));
-  Num zRe2(toNum(0));
-  Num zIm2(toNum(0));
+int iterations(int maxIterationCount, Num cRe, Num cIm) {
+  Num zRe = f0;
+  Num zIm = f0;
+  Num zRe2 = f0;
+  Num zIm2 = f0;
   for (int i = 0; i < maxIterationCount; ++i) {
     Num zReNew = zRe2 - zIm2 + cRe;
     Num zImNew = zRe * zIm * 2 + cIm;
     zRe2 = zReNew * zReNew;
     zIm2 = zImNew * zImNew;
-    P(zRe2);
-    P(zIm2);
     if (zRe2 + zIm2 > 4) {
-      P(cIm);
       return i;
     }
     zRe = zReNew;
