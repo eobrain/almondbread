@@ -42,7 +42,7 @@ TEST(FixedTest, Multiply) {
   EXPECT_EQ(toString(ab), "6000e-17");
 }
 
-TEST(FixedTest, MultiplyNotUnderflow) {
+TEST(FixedTest, MultiplyUnderflow) {
   Num a = toNum(1.1111e-10);
   Num b = toNum(7e-6);
   Num ab = a * b;  // 7.7777e-16

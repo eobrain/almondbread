@@ -68,29 +68,17 @@ void splitNumber(const string &s, string *decimal, string *fraction,
 
 long double number(const string &s) { return strtold(s.c_str(), NULL); }
 
-string toString(__int128 i) {
-  string sign;
-  if (i < 0) {
-    sign = "-";
-    i = -i;
-  }
-  string result;
-  long long lo = static_cast<long long>(i & 0xffffffffffffffff);
-  long long hi = static_cast<long long>(i >> 64);
-  if (hi) {
-    return sign + to_string(hi) + to_string(lo);
-  }
-  return sign + to_string(lo);
+string toStringU128(unsigned __int128 x) {
+  if (x < 10) return to_string((int)x);
+  return toStringU128(x / 10) + to_string((int)(x % 10));
 }
 
-string toString(unsigned __int128 i) {
-  string result;
-  long long lo = static_cast<long long>(i & 0xffffffffffffffff);
-  long long hi = static_cast<long long>(i >> 64);
-  if (hi) {
-    return to_string(hi) + to_string(lo);
-  }
-  return to_string(lo);
+string toString128(__int128 x) {
+  if (x < 0)
+    return "-" +
+           toStringU128((unsigned __int128)((~((unsigned __int128)x)) + 1));
+  if (x < 10) return to_string((int)x);
+  return toString128(x / 10) + to_string((int)(x % 10));
 }
 
 __int128 pow10(__int128 exp) {
@@ -103,6 +91,18 @@ __int128 pow10(__int128 exp) {
     base *= base;
   }
 
+  return result;
+}
+
+__int128 num2int(Num n) {
+  __int128 result;
+  std::memcpy(&result, &n, 128 / 8);
+  return result;
+}
+
+Num int2num(__int128 n) {
+  Num result;
+  std::memcpy(&result, &n, 128 / 8);
   return result;
 }
 }  // namespace
@@ -122,8 +122,8 @@ std::ostream &operator<<(std::ostream &out, Num n) {
 }
 
 string toString(Num a) {
-  return toString(static_cast<__int128>(a)) + "e-" +
-         to_string(impl::negExponent);
+  __int128 i = num2int(a);
+  return toString128(i) + "e-" + to_string(impl::negExponent);
 }
 
 void init(unsigned negExponent) {
@@ -135,12 +135,21 @@ void init(unsigned negExponent) {
   min = static_cast<Num>(1);
   max = static_cast<Num>(numeric_limits<__int128>::max());
   cout << "fixed::Num scaled to 10^-" << impl::negExponent << " = 1/"
-       << toString(impl::scale) << "\n"
+       << toStringU128(impl::scale) << "\n"
        << " " << numeric_limits<__int128>::digits << " bits,"
        << " " << numeric_limits<__int128>::digits10 << " decimal digits\n"
        << " lowest = " << lowest << " = " << number(toString(lowest)) << "\n"
        << " min    = " << min << " = " << number(toString(min)) << "\n"
        << " max    = " << max << " = " << number(toString(max)) << endl;
+}
+
+__int128 parseInt128(const string &s) {
+  __int128 result = 0;
+  for (char ch : s) {
+    result *= 10;
+    result += ch - '0';
+  }
+  return result;
 }
 
 Num parse(const string &s) {
@@ -157,7 +166,7 @@ Num parse(const string &s) {
     mantissaS = mantissaS.substr(
         0, mantissaS.length() - (negExponent10 - impl::negExponent));
   }
-  return static_cast<Num>(atoll(mantissaS.c_str()));
+  return static_cast<Num>(parseInt128(mantissaS));
 }
 
 }  // namespace fixed

@@ -7,3 +7,4 @@
 /histogram.csv
 /mandelbrot_debug
 /fixedpt_*_test
+*.o

@@ -1,4 +1,5 @@
-
+CC="g++ -Wall"
+#CC="clang++ -Wall"
 
 [serve]
 deps=["mandelbrot"]
@@ -23,22 +24,26 @@ exec="time ./$<"
 deps=["mandelbrot_debug"]
 exec="valgrind ./$< -W 140 -H 90 -i 10"
 
+["%.o"]
+deps=["%.cc"]
+exec="$(CC) -DNDEBUG -O3 -c $<"
+
 [mandelbrot]
-deps=["main.cc", "fixedpt.cc", "lodepng.cpp", "fixedpt.h", "lodepng.h"]
-exec="g++ -DNDEBUG -O3 -Wall main.cc fixedpt.cc lodepng.cpp -pthread -o $@"
+deps=["main.o", "fixedpt.o", "lodepng.cpp", "fixedpt.h", "lodepng.h"]
+exec="$(CC) -DNDEBUG -O3 main.o fixedpt.o lodepng.cpp -pthread -o $@"
 
 [mandelbrot_debug]
 deps=["main.cc", "fixedpt.cc", "lodepng.cpp", "fixedpt.h", "lodepng.h"]
-exec="g++ -g -Wall main.cc fixedpt.cc lodepng.cpp -pthread -o $@"
+exec="$(CC) -g main.cc fixedpt.cc lodepng.cpp -pthread -o $@"
 
 ["fixedpt_%_test"]
 deps=["fixedpt_%_test.cc", "fixedpt.cc", "fixedpt.h"]
-exec="g++ -g -Wall fixedpt_%_test.cc fixedpt.cc /usr/lib/libgtest_main.a /usr/lib/libgtest.a  -pthread -o $@"
+exec="$(CC) -g fixedpt_%_test.cc fixedpt.cc /usr/lib/libgtest_main.a /usr/lib/libgtest.a  -pthread -o $@"
 
 ["test_%"]
 deps=["fixedpt_%_test"]
 exec="./$<"
 
 [test]
-deps=["test_1", "test_8", "test_12", "test_17"]
+deps=["test_1", "test_8", "test_12", "test_17", "test_35"]
 

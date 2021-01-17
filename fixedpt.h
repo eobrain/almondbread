@@ -25,11 +25,9 @@ inline Num toNum(__int128 value) {
 }
 inline Num toNum(int value) { return static_cast<Num>(value * impl::scale); }
 inline Num toNum(long double value) {
-  return static_cast<Num>(llrintl(value * impl::scale));
+  return static_cast<Num>(value * impl::scale);
 }
-inline Num toNum(double value) {
-  return static_cast<Num>(llrint(value * pow(10, impl::negExponent)));
-}
+inline Num toNum(double value) { return static_cast<Num>(value * impl::scale); }
 extern Num parse(const std::string &s);
 extern std::string toString(Num a);
 
@@ -39,7 +37,7 @@ inline Num operator+(Num a, T b) {
 }
 template <>
 inline Num operator+(Num a, Num b) {
-  return static_cast<Num>(static_cast<__int128>(a) + static_cast<__int128>(b));
+  return (Num)((__int128)(a) + (__int128)(b));
 }
 
 template <typename T>

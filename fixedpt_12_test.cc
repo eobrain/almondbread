@@ -1,14 +1,10 @@
 #include <gtest/gtest.h>
 
-#include <regex>
-
 #include "fixedpt.h"
 using fixed::init;
 using fixed::Num;
 using fixed::parse;
 using fixed::toNum;
-using std::regex;
-using std::regex_match;
 using std::string;
 using ::testing::InitGoogleTest;
 
