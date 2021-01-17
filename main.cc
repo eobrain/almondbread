@@ -303,7 +303,7 @@ void threadWorker(const Params &params, Image *img, int mod) {
 
 int main(int argc, char *const argv[]) {
   P(threadCount);
-  init(17);
+  init(35);
   Params params;
 
   int opt;
