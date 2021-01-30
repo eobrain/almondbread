@@ -6,3 +6,7 @@
 /public/cache/mandelbrot_*.png
 /histogram.csv
 /mandelbrot_debug
+/public/cache/video_*.png
+/public/cache/video_*.gif
+*.o
+/fixedpt_*_test
