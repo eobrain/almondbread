@@ -109,8 +109,11 @@ void addText(lodepng::State *state, const char *key, const string &value) {
 // hill-shading parameters
 constexpr double Z_FACTOR = 1;
 constexpr double KERNELSIZE = 1;
-constexpr double AZIMUTH = 315 * M_PI / 180;
 constexpr double ALTITUDE = 45 * M_PI / 180;
+constexpr double AZIMUTH = 135 * M_PI / 180;
+
+// Derived hill-shading values
+constexpr double ZENITH = M_PI / 2 - ALTITUDE;
 
 class Image {
   const int _width;
@@ -134,30 +137,11 @@ class Image {
 
   int centerIterations() { return iterations(_width / 2, _height / 2); }
 
-  void stretchColor() {
-    int n = _width * _height * 4;
-    int maxs[] = {0, 0, 0};
-    for (int i = 0; i < n; ++i) {
-      int layer = i % 4;
-      if (layer < 3) {
-        if (_pixels[i] > maxs[layer]) {
-          maxs[layer] = _pixels[i];
-        }
-      }
-    }
-    cout << "maxs=" << maxs[0] << " " << maxs[1] << " " << maxs[1] << endl;
-    for (int i = 0; i < n; ++i) {
-      int layer = i % 4;
-      if (layer < 3 && maxs[layer] > 0) {
-        _pixels[i] = (int)_pixels[i] * 256 / maxs[layer];
-      }
-    }
-  }
-
   /** https://pro.arcgis.com/en/pro-app/latest/tool-reference/3d-analyst/how-hillshade-works.htm
    * https://blog.datawrapper.de/shaded-relief-with-gdal-python/
    */
   double hillshade(int ix, int iy) {
+    // Values in the eight neighboring cells
     const double a = iterations(ix - 1, iy - 1);
     const double b = iterations(ix, iy - 1);
     const double c = iterations(ix + 1, iy - 1);
@@ -167,49 +151,14 @@ class Image {
     const double h = iterations(ix, iy + 1);
     const double i = iterations(ix + 1, iy + 1);
 
-    // Computing the illumination angle
-
-    //(3)
-    constexpr double ZENITH = (M_PI / 2 - ALTITUDE);
-
-    // Computing the illumination direction
-
-    // (4) (5) (6)
-    constexpr double AZIMUTH_math =
-        AZIMUTH <= M_PI / 2 ? M_PI / 2 - AZIMUTH : 5 * M_PI / 2 - AZIMUTH;
-
-    // Computing slope and aspect
-
-    // (7)
     const double dzdx = ((c + 2 * f + i) - (a + 2 * d + g)) / (8 * KERNELSIZE);
-
-    // (8)
     const double dzdy = ((g + 2 * h + i) - (a + 2 * b + c)) / (8 * KERNELSIZE);
 
-    // (9)
     const double slope = atan(Z_FACTOR * sqrt(dzdx * dzdx + dzdy * dzdy));
 
-    // (10)
     const double aspect = atan2(dzdy, -dzdx);
-    /*if (dzdx) {
-      aspect = atan2(dzdy, -dzdx);
-
-      if (aspect < 0) {
-        aspect = 2 * M_PI + aspect;
-      }
-    } else {
-      if (dzdy > 0) {
-        aspect = M_PI / 2;
-      } else if (dzdy < 0) {
-        aspect = 3 * M_PI / 2;
-      } else {
-        aspect = aspect;
-      }
-    }*/
-
-    // (1)
     double shade = ((cos(ZENITH) * cos(slope)) +
-                    (sin(ZENITH) * sin(slope) * cos(AZIMUTH_math - aspect)));
+                    (sin(ZENITH) * sin(slope) * cos(AZIMUTH - aspect)));
     return shade < 0 ? 0 : shade;
   }
 
@@ -341,7 +290,6 @@ void setColor(const Stats &stats, Image *img, int maxIterationCount, int ix,
   double value = stats.percentile(iters);
   value *= value;
   auto rgb = hsv2rgb(250 * value, (1 - 3 * value / 4) / 2, (2 + shade) / 3);
-  // auto rgb = hsv2rgb(100, 0.5, shade);
   for (int i = 0; i < 3; ++i) {
     img->pixel(ix, iy, i) = rgb[i] * 256;
   }
@@ -361,8 +309,6 @@ void threadWorker(const Params &params, Image *img, int mod) {
 }  // namespace
 
 int main(int argc, char *const argv[]) {
-  // try {
-  P(threadCount);
   Params params;
 
   int opt;
@@ -403,8 +349,6 @@ int main(int argc, char *const argv[]) {
     }
   }
 
-  P(params);
-
   Image img(params.imgWidth, params.imgHeight);
   Stats stats;
   vector<thread> threads;
@@ -433,9 +377,6 @@ int main(int argc, char *const argv[]) {
       setColor(stats, &img, params.maxIterationCount, ix, iy, shade);
     }
 
-  // img.stretchColor();
-
-  P(params);
   bool ok = img.writePng(params);
 
   ofstream histogram("histogram.csv");
@@ -443,7 +384,4 @@ int main(int argc, char *const argv[]) {
   histogram.close();
 
   return ok ? 0 : 1;
-  //} catch (std::out_of_range e) {
-  //  std::cerr << "EXCEPTION: " << e.what() << endl;
-  //}
 }
