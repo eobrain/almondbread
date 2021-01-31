@@ -33,9 +33,9 @@ using std::vector;
 
 #ifndef NDEBUG
 #define P(x) \
-  cout << __FILE__ << ":" << __LINE__ << ":" << #x << "=" << x << endl
+  (cout << __FILE__ << ":" << __LINE__ << ":" << #x << "=" << x << endl, x)
 #else
-#define P(x)
+#define P(x) x
 #endif
 
 namespace {
@@ -106,6 +106,12 @@ void addText(lodepng::State *state, const char *key, const string &value) {
   if (err) throw err;
 }
 
+// hill-shading parameters
+constexpr double Z_FACTOR = 1;
+constexpr double KERNELSIZE = 1;
+constexpr double AZIMUTH = 315 * M_PI / 180;
+constexpr double ALTITUDE = 45 * M_PI / 180;
+
 class Image {
   const int _width;
   const int _height;
@@ -119,10 +125,8 @@ class Image {
         _iterations(width * height),
         _pixels(new unsigned char[width * height * 4]) {}
   ~Image() { delete[] _pixels; }
-  int &iterations(int ix, int iy) {
-    // Optimized for ix changing faster
-    return _iterations[ix + _width * iy];
-  }
+  // Optimized for ix changing faster
+  int &iterations(int ix, int iy) { return _iterations[ix + _width * iy]; }
 
   unsigned char &pixel(int ix, int iy, int layer) {
     return _pixels[4 * ix + 4 * _width * iy + layer];
@@ -148,6 +152,65 @@ class Image {
         _pixels[i] = (int)_pixels[i] * 256 / maxs[layer];
       }
     }
+  }
+
+  /** https://pro.arcgis.com/en/pro-app/latest/tool-reference/3d-analyst/how-hillshade-works.htm
+   * https://blog.datawrapper.de/shaded-relief-with-gdal-python/
+   */
+  double hillshade(int ix, int iy) {
+    const double a = iterations(ix - 1, iy - 1);
+    const double b = iterations(ix, iy - 1);
+    const double c = iterations(ix + 1, iy - 1);
+    const double d = iterations(ix - 1, iy);
+    const double f = iterations(ix + 1, iy);
+    const double g = iterations(ix - 1, iy + 1);
+    const double h = iterations(ix, iy + 1);
+    const double i = iterations(ix + 1, iy + 1);
+
+    // Computing the illumination angle
+
+    //(3)
+    constexpr double ZENITH = (M_PI / 2 - ALTITUDE);
+
+    // Computing the illumination direction
+
+    // (4) (5) (6)
+    constexpr double AZIMUTH_math =
+        AZIMUTH <= M_PI / 2 ? M_PI / 2 - AZIMUTH : 5 * M_PI / 2 - AZIMUTH;
+
+    // Computing slope and aspect
+
+    // (7)
+    const double dzdx = ((c + 2 * f + i) - (a + 2 * d + g)) / (8 * KERNELSIZE);
+
+    // (8)
+    const double dzdy = ((g + 2 * h + i) - (a + 2 * b + c)) / (8 * KERNELSIZE);
+
+    // (9)
+    const double slope = atan(Z_FACTOR * sqrt(dzdx * dzdx + dzdy * dzdy));
+
+    // (10)
+    const double aspect = atan2(dzdy, -dzdx);
+    /*if (dzdx) {
+      aspect = atan2(dzdy, -dzdx);
+
+      if (aspect < 0) {
+        aspect = 2 * M_PI + aspect;
+      }
+    } else {
+      if (dzdy > 0) {
+        aspect = M_PI / 2;
+      } else if (dzdy < 0) {
+        aspect = 3 * M_PI / 2;
+      } else {
+        aspect = aspect;
+      }
+    }*/
+
+    // (1)
+    double shade = ((cos(ZENITH) * cos(slope)) +
+                    (sin(ZENITH) * sin(slope) * cos(AZIMUTH_math - aspect)));
+    return shade < 0 ? 0 : shade;
   }
 
   bool writePng(const Params &params) const {
@@ -265,7 +328,7 @@ int iterations(const Params &params, int ix, int iy) {
 const int COLOR_SCALE = 10;
 
 void setColor(const Stats &stats, Image *img, int maxIterationCount, int ix,
-              int iy) {
+              int iy, double shade) {
   int iters = img->iterations(ix, iy);
   if (iters == maxIterationCount) {
     img->pixel(ix, iy, 0) = 0;
@@ -277,7 +340,8 @@ void setColor(const Stats &stats, Image *img, int maxIterationCount, int ix,
 
   double value = stats.percentile(iters);
   value *= value;
-  auto rgb = hsv2rgb(250 * value, value, 1 - value / 2);
+  auto rgb = hsv2rgb(250 * value, (1 - 3 * value / 4) / 2, (2 + shade) / 3);
+  // auto rgb = hsv2rgb(100, 0.5, shade);
   for (int i = 0; i < 3; ++i) {
     img->pixel(ix, iy, i) = rgb[i] * 256;
   }
@@ -297,6 +361,7 @@ void threadWorker(const Params &params, Image *img, int mod) {
 }  // namespace
 
 int main(int argc, char *const argv[]) {
+  // try {
   P(threadCount);
   Params params;
 
@@ -326,10 +391,12 @@ int main(int argc, char *const argv[]) {
         break;
       default: /* '?' */
         cerr << "Usage: " << argv[0]
-             << " -W imgWidth -H imgHeight -x centerReal -y centerImaginary -w "
+             << " -W imgWidth -H imgHeight -x centerReal -y centerImaginary "
+                "-w "
                 "viewportWidth -i iterations"
              << endl
-             << "  defaults:  -W 1400 -H 900  -x -0.5671 -y -0.56698 -w 0.2 -i "
+             << "  defaults:  -W 1400 -H 900  -x -0.5671 -y -0.56698 -w 0.2 "
+                "-i "
                 "10000 -o mandelbrot.png"
              << endl;
         return EXIT_FAILURE;
@@ -355,10 +422,15 @@ int main(int argc, char *const argv[]) {
         stats(iters);
       }
     }
+  stats(params.maxIterationCount);
   stats.preparePercentile();
   for (int iy = 0; iy < params.imgHeight; ++iy)
     for (int ix = 0; ix < params.imgWidth; ++ix) {
-      setColor(stats, &img, params.maxIterationCount, ix, iy);
+      double shade = ix > 0 && iy > 0 && ix < params.imgWidth - 1 &&
+                             iy < params.imgHeight - 1
+                         ? img.hillshade(ix, iy)
+                         : 0;
+      setColor(stats, &img, params.maxIterationCount, ix, iy, shade);
     }
 
   // img.stretchColor();
@@ -371,4 +443,7 @@ int main(int argc, char *const argv[]) {
   histogram.close();
 
   return ok ? 0 : 1;
+  //} catch (std::out_of_range e) {
+  //  std::cerr << "EXCEPTION: " << e.what() << endl;
+  //}
 }
