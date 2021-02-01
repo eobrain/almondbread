@@ -1,7 +1,7 @@
 import express from 'express'
 import { promises, existsSync } from 'fs'
 import { spawn } from 'child_process'
-import { imgWidth, imgHeight } from './public/common.js'
+import { imgWidth, imgHeight, videoWidth, videoHeight } from './public/common.js'
 
 const { writeFile } = promises
 
@@ -70,13 +70,14 @@ const videoEndPoint = (suffix, scale) => async (req, res) => {
   }
 
   const videoWs = []
-  for (let videoW = w; videoW < 8; videoW *= 1.1) {
+  for (let videoW = w; videoW < 8; videoW *= 1.05) {
     videoWs.push(videoW)
   }
   if (videoWs.length === 0) {
     res.status(400)
     return
   }
+  videoWs.reverse()
 
   const videoImgFilenameF = frame =>
     `public/cache/${suffix}_${x}_${y}_${w}_${i}_${frame}.png`
@@ -99,8 +100,8 @@ const videoEndPoint = (suffix, scale) => async (req, res) => {
         '-y', y,
         '-w', videoW,
         '-i', i,
-        '-W', imgWidth / scale,
-        '-H', imgHeight / scale
+        '-W', videoWidth / scale,
+        '-H', videoHeight / scale
       ])
 
       console.log('Generated ', videoImgFilename)
