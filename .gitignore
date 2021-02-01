@@ -10,3 +10,5 @@
 /public/cache/video_*.gif
 *.o
 /fixedpt_*_test
+public/cache/mpg_*.png
+public/cache/mp4_*.png

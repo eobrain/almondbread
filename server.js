@@ -1,7 +1,9 @@
 import express from 'express'
-import { existsSync } from 'fs'
+import { promises, existsSync } from 'fs'
 import { spawn } from 'child_process'
 import { imgWidth, imgHeight } from './public/common.js'
+
+const { writeFile } = promises
 
 const app = express()
 const port = 3333
@@ -54,11 +56,12 @@ app.get('/image', async (req, res) => {
   res.redirect(imgPath)
 })
 
-app.get('/video', async (req, res) => {
+const videoEndPoint = (suffix, scale) => async (req, res) => {
   console.log('video', req.query)
   const { x, y, w, i } = req.query
-  const videoPath = `/cache/video_${x}_${y}_${w}_${i}.gif`
+  const videoPath = `/cache/video_${x}_${y}_${w}_${i}.${suffix}`
   const videoFileName = `public${videoPath}`
+  const inputImagesPath = `public/cache/video_${x}_${y}_${w}_${i}.txt`
 
   if (existsSync(videoFileName)) {
     console.log('Using existing cached ', videoFileName)
@@ -75,36 +78,67 @@ app.get('/video', async (req, res) => {
     return
   }
 
-  const videoImgFilenameF = videoW => `public/cache/video_${x}_${y}_${videoW}_${i}.png`
+  const videoImgFilenameF = frame =>
+    `public/cache/${suffix}_${x}_${y}_${w}_${i}_${frame}.png`
 
+  let inputImages = ''
+  let frame = 0
+  const frames = []
   for (const videoW of videoWs) {
-    const videoImgFilename = videoImgFilenameF(videoW)
-    console.log('Generating ', videoImgFilename)
-    await execute('./mandelbrot', [
-      '-o', videoImgFilename,
-      '-x', x,
-      '-y', y,
-      '-w', videoW,
-      '-i', i,
-      '-W', imgWidth / 5,
-      '-H', imgHeight / 5
-    ])
+    ++frame
+    frames.push(frame)
+    const videoImgFilename = videoImgFilenameF(frame)
+    inputImages += `file '${videoImgFilename}'\n`
+    if (existsSync(videoImgFilename)) {
+      console.log('Using existing cached ', videoImgFilename)
+    } else {
+      console.log('Generating ', videoImgFilename)
+      await execute('./mandelbrot', [
+        '-o', videoImgFilename,
+        '-x', x,
+        '-y', y,
+        '-w', videoW,
+        '-i', i,
+        '-W', imgWidth / scale,
+        '-H', imgHeight / scale
+      ])
 
-    console.log('Generated ', videoImgFilename)
+      console.log('Generated ', videoImgFilename)
+    }
   }
+  await writeFile(inputImagesPath, inputImages)
+
   const inAndOut = [
-    ...videoWs.sort((a, b) => a - b),
-    ...videoWs.sort((a, b) => b - a)
+    ...frames.sort((a, b) => a - b),
+    ...frames.sort((a, b) => b - a)
   ]
-  await execute('convert', [
-    '-delay', 4,
-    '-colors', 200,
-    ...inAndOut.map(videoImgFilenameF),
-    '-loop', 0,
-    videoFileName
-  ])
+  switch (suffix) {
+    case 'gif':
+      await execute('convert', [
+        '-delay', 4,
+        '-colors', 200,
+        ...inAndOut.map(videoImgFilenameF),
+        '-loop', 0,
+        videoFileName
+      ])
+      break
+    case 'mp4':
+      await execute('ffmpeg', [
+        '-r:v', 30,
+        '-i', videoImgFilenameF('%d'),
+        '-codec:v', 'libx264',
+        '-profile:v', 'high',
+        '-preset', 'slow',
+        '-pix_fmt', 'yuv420p',
+        '-crf', 17,
+        '-an', videoFileName])
+      break
+  }
   res.redirect(videoPath)
-})
+}
+
+app.get('/gif', videoEndPoint('gif', 5))
+app.get('/mp4', videoEndPoint('mp4', 1))
 
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`)

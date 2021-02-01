@@ -2,7 +2,8 @@
  imgElement,
  zoomElement,
  magnificationElement,
- videoElement,
+ gifElement,
+ mp4Element,
  xElement,
  yElement,
  wElement,
@@ -36,7 +37,8 @@ const doit = () => {
   iElement.innerText = i
   console.log('values:', x, y, w, i)
   busy = true
-  videoElement.setAttribute('href', `/video?x=${x}&y=${y}&w=${w}&i=${i}`)
+  gifElement.setAttribute('href', `/gif?x=${x}&y=${y}&w=${w}&i=${i}`)
+  mp4Element.setAttribute('href', `/mp4?x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.className = 'cursor-busy'
   imgElement.setAttribute('src', `/image?x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.onload = () => {
