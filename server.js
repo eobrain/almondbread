@@ -1,7 +1,11 @@
 import express from 'express'
 import { promises, existsSync } from 'fs'
 import { spawn } from 'child_process'
-import { imgWidth, imgHeight, videoWidth, videoHeight } from './public/common.js'
+import {
+  HD_IMG_WIDTH, HD_IMG_HEIGHT,
+  MEDIUM_IMG_WIDTH, MEDIUM_IMG_HEIGHT,
+  VIDEO_WIDTH, VIDEO_HEIGHT
+} from './public/common.js'
 
 const { writeFile } = promises
 
@@ -32,9 +36,9 @@ const execute = (command, args) => new Promise((resolve, reject) => {
   })
 })
 
-app.get('/image', async (req, res) => {
+const imgEndPoint = (imgWidth, imgHeight) => async (req, res) => {
   const { x, y, w, i } = req.query
-  const imgPath = `/cache/mandelbrot_${x}_${y}_${w}_${i}.png`
+  const imgPath = `/cache/${imgWidth}x${imgHeight}_${x}_${y}_${w}_${i}.png`
   const imgFileName = `public${imgPath}`
 
   if (existsSync(imgFileName)) {
@@ -54,7 +58,7 @@ app.get('/image', async (req, res) => {
   ])
   console.log('Generated ', imgFileName)
   res.redirect(imgPath)
-})
+}
 
 const videoEndPoint = (suffix, scale) => async (req, res) => {
   console.log('video', req.query)
@@ -100,8 +104,8 @@ const videoEndPoint = (suffix, scale) => async (req, res) => {
         '-y', y,
         '-w', videoW,
         '-i', i,
-        '-W', videoWidth / scale,
-        '-H', videoHeight / scale
+        '-W', VIDEO_WIDTH / scale,
+        '-H', VIDEO_HEIGHT / scale
       ])
 
       console.log('Generated ', videoImgFilename)
@@ -140,6 +144,8 @@ const videoEndPoint = (suffix, scale) => async (req, res) => {
 
 app.get('/gif', videoEndPoint('gif', 5))
 app.get('/mp4', videoEndPoint('mp4', 1))
+app.get('/hd', imgEndPoint(HD_IMG_WIDTH, HD_IMG_HEIGHT))
+app.get('/medium', imgEndPoint(MEDIUM_IMG_WIDTH, MEDIUM_IMG_HEIGHT))
 
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`)

@@ -4,6 +4,7 @@
  magnificationElement,
  gifElement,
  mp4Element,
+ mediumElement,
  xElement,
  yElement,
  wElement,
@@ -11,7 +12,7 @@
  iNewElement,
  iLog10Element */
 
-import { imgWidth, imgHeight } from './common.js'
+import { HD_IMG_WIDTH, HD_IMG_HEIGHT } from './common.js'
 
 let busy = false
 
@@ -39,8 +40,9 @@ const doit = () => {
   busy = true
   gifElement.setAttribute('href', `/gif?x=${x}&y=${y}&w=${w}&i=${i}`)
   mp4Element.setAttribute('href', `/mp4?x=${x}&y=${y}&w=${w}&i=${i}`)
+  mediumElement.setAttribute('href', `/medium?x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.className = 'cursor-busy'
-  imgElement.setAttribute('src', `/image?x=${x}&y=${y}&w=${w}&i=${i}`)
+  imgElement.setAttribute('src', `/hd?x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.onload = () => {
     setCursorMagnification()
     busy = false
@@ -56,12 +58,12 @@ const doit = () => {
       return
     }
     const { offsetX, offsetY } = event
-    const scale = w / imgWidth
-    const height = scale * imgHeight
+    const scale = w / HD_IMG_WIDTH
+    const height = scale * HD_IMG_HEIGHT
     const viewPortLeft = x - w / 2
     const viewPortTop = y - height / 2
     const newX = viewPortLeft + offsetX * scale
-    const newY = viewPortTop + (imgHeight - offsetY) * scale
+    const newY = viewPortTop + (HD_IMG_HEIGHT - offsetY) * scale
     const magnification = magnificationElement.valueAsNumber
     const zoom = 1 << magnification
     zoomElement.innerText = zoom

@@ -44,8 +44,8 @@ constexpr int INT_MIN = numeric_limits<int>::min();
 constexpr int INT_MAX = numeric_limits<int>::max();
 
 struct Params {
-  int imgWidth = 1400;
-  int imgHeight = 900;
+  int HD_IMG_WIDTH = 1400;
+  int HD_IMG_HEIGHT = 900;
   double centerRe = -0.5671;
   double centerIm = -0.56698;
   double width = 0.2;
@@ -53,7 +53,7 @@ struct Params {
   const char *outputFileName = "mandelbrot.png";
 };
 ostream &operator<<(ostream &out, const Params &p) {
-  out << "imgWidth=" << p.imgWidth << " imgHeight=" << p.imgHeight
+  out << "HD_IMG_WIDTH=" << p.HD_IMG_WIDTH << " HD_IMG_HEIGHT=" << p.HD_IMG_HEIGHT
       << " centerRe=" << p.centerRe << " centerIm=" << p.centerIm
       << " width=" << p.width << " maxIterationCount=" << p.maxIterationCount
       << " outputFileName=" << p.outputFileName;
@@ -207,8 +207,8 @@ class Image {
                   "@" + hostname + " using " + software + ".\n" + description);
 
       vector<unsigned char> png;
-      unsigned err = lodepng::encode(png, _pixels, params.imgWidth,
-                                     params.imgHeight, state);
+      unsigned err = lodepng::encode(png, _pixels, params.HD_IMG_WIDTH,
+                                     params.HD_IMG_HEIGHT, state);
       if (err) throw err;
 
       lodepng::save_file(png, params.outputFileName);
@@ -268,9 +268,9 @@ int iterations(int maxIterationCount, double cRe, double cIm) {
 }
 
 int iterations(const Params &params, int ix, int iy) {
-  double scale = params.width / params.imgWidth;
-  double cRe = scale * (ix - params.imgWidth / 2) + params.centerRe;
-  double cIm = scale * (params.imgHeight / 2 - iy) + params.centerIm;
+  double scale = params.width / params.HD_IMG_WIDTH;
+  double cRe = scale * (ix - params.HD_IMG_WIDTH / 2) + params.centerRe;
+  double cIm = scale * (params.HD_IMG_HEIGHT / 2 - iy) + params.centerIm;
   return iterations(params.maxIterationCount, cRe, cIm);
 }
 
@@ -299,8 +299,8 @@ void setColor(const Stats &stats, Image *img, int maxIterationCount, int ix,
 int threadCount = thread::hardware_concurrency();
 
 void threadWorker(const Params &params, Image *img, int mod) {
-  for (int iy = mod; iy < params.imgHeight; iy += threadCount)
-    for (int ix = 0; ix < params.imgWidth; ++ix) {
+  for (int iy = mod; iy < params.HD_IMG_HEIGHT; iy += threadCount)
+    for (int ix = 0; ix < params.HD_IMG_WIDTH; ++ix) {
       img->iterations(ix, iy) = iterations(params, ix, iy);
     }
   cout << "Finished thread " << mod << endl;
@@ -315,10 +315,10 @@ int main(int argc, char *const argv[]) {
   while ((opt = getopt(argc, argv, "W:H:x:y:w:i:o:")) != -1) {
     switch (opt) {
       case 'W':
-        params.imgWidth = atoi(optarg);
+        params.HD_IMG_WIDTH = atoi(optarg);
         break;
       case 'H':
-        params.imgHeight = atoi(optarg);
+        params.HD_IMG_HEIGHT = atoi(optarg);
         break;
       case 'x':
         params.centerRe = atof(optarg);
@@ -337,7 +337,7 @@ int main(int argc, char *const argv[]) {
         break;
       default: /* '?' */
         cerr << "Usage: " << argv[0]
-             << " -W imgWidth -H imgHeight -x centerReal -y centerImaginary "
+             << " -W HD_IMG_WIDTH -H HD_IMG_HEIGHT -x centerReal -y centerImaginary "
                 "-w "
                 "viewportWidth -i iterations"
              << endl
@@ -349,7 +349,7 @@ int main(int argc, char *const argv[]) {
     }
   }
 
-  Image img(params.imgWidth, params.imgHeight);
+  Image img(params.HD_IMG_WIDTH, params.HD_IMG_HEIGHT);
   Stats stats;
   vector<thread> threads;
   for (int mod = 0; mod < threadCount; ++mod) {
@@ -359,8 +359,8 @@ int main(int argc, char *const argv[]) {
     thread.join();
   }
 
-  for (int iy = 0; iy < params.imgHeight; ++iy)
-    for (int ix = 0; ix < params.imgWidth; ++ix) {
+  for (int iy = 0; iy < params.HD_IMG_HEIGHT; ++iy)
+    for (int ix = 0; ix < params.HD_IMG_WIDTH; ++ix) {
       int iters = img.iterations(ix, iy);
       if (iters != params.maxIterationCount) {
         stats(iters);
@@ -368,10 +368,10 @@ int main(int argc, char *const argv[]) {
     }
   stats(params.maxIterationCount);
   stats.preparePercentile();
-  for (int iy = 0; iy < params.imgHeight; ++iy)
-    for (int ix = 0; ix < params.imgWidth; ++ix) {
-      double shade = ix > 0 && iy > 0 && ix < params.imgWidth - 1 &&
-                             iy < params.imgHeight - 1
+  for (int iy = 0; iy < params.HD_IMG_HEIGHT; ++iy)
+    for (int ix = 0; ix < params.HD_IMG_WIDTH; ++ix) {
+      double shade = ix > 0 && iy > 0 && ix < params.HD_IMG_WIDTH - 1 &&
+                             iy < params.HD_IMG_HEIGHT - 1
                          ? img.hillshade(ix, iy)
                          : 0;
       setColor(stats, &img, params.maxIterationCount, ix, iy, shade);
