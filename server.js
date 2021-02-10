@@ -60,12 +60,12 @@ const imgEndPoint = (imgWidth, imgHeight) => async (req, res) => {
   res.redirect(imgPath)
 }
 
-const videoEndPoint = (suffix, scale) => async (req, res) => {
+const videoEndPoint = (suffix, imgWidth, imgHeight) => async (req, res) => {
   console.log('video', req.query)
   const { x, y, w, i } = req.query
-  const videoPath = `/cache/video_${x}_${y}_${w}_${i}.${suffix}`
+  const videoPath = `/cache/${imgWidth}x${imgHeight}_${x}_${y}_${w}_${i}.${suffix}`
   const videoFileName = `public${videoPath}`
-  const inputImagesPath = `public/cache/video_${x}_${y}_${w}_${i}.txt`
+  const inputImagesPath = `public/cache/${imgWidth}x${imgHeight}_${x}_${y}_${w}_${i}.txt`
 
   if (existsSync(videoFileName)) {
     console.log('Using existing cached ', videoFileName)
@@ -74,7 +74,9 @@ const videoEndPoint = (suffix, scale) => async (req, res) => {
   }
 
   const videoWs = []
-  for (let videoW = w; videoW < 8; videoW *= 1.05) {
+  let mult = 0.03
+  for (let videoW = w / 10; videoW < 8; videoW *= (1 + mult)) {
+    mult *= 1.005
     videoWs.push(videoW)
   }
   if (videoWs.length === 0) {
@@ -84,7 +86,7 @@ const videoEndPoint = (suffix, scale) => async (req, res) => {
   videoWs.reverse()
 
   const videoImgFilenameF = frame =>
-    `public/cache/${suffix}_${x}_${y}_${w}_${i}_${frame}.png`
+    `public/cache/${imgWidth}x${imgHeight}_${x}_${y}_${w}_${i}_${frame}.png`
 
   let inputImages = ''
   let frame = 0
@@ -104,8 +106,8 @@ const videoEndPoint = (suffix, scale) => async (req, res) => {
         '-y', y,
         '-w', videoW,
         '-i', i,
-        '-W', VIDEO_WIDTH / scale,
-        '-H', VIDEO_HEIGHT / scale
+        '-W', imgWidth,
+        '-H', imgHeight
       ])
 
       console.log('Generated ', videoImgFilename)
@@ -142,8 +144,9 @@ const videoEndPoint = (suffix, scale) => async (req, res) => {
   res.redirect(videoPath)
 }
 
-app.get('/gif', videoEndPoint('gif', 5))
-app.get('/mp4', videoEndPoint('mp4', 1))
+app.get('/gif', videoEndPoint('gif', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5))
+app.get('/zoom', videoEndPoint('mp4', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5))
+app.get('/mp4', videoEndPoint('mp4', VIDEO_WIDTH, VIDEO_HEIGHT))
 app.get('/hd', imgEndPoint(HD_IMG_WIDTH, HD_IMG_HEIGHT))
 app.get('/medium', imgEndPoint(MEDIUM_IMG_WIDTH, MEDIUM_IMG_HEIGHT))
 

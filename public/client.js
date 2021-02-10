@@ -3,6 +3,7 @@
  zoomElement,
  magnificationElement,
  gifElement,
+ mp3SmallElement,
  mp4Element,
  mediumElement,
  xElement,
@@ -39,6 +40,7 @@ const doit = () => {
   console.log('values:', x, y, w, i)
   busy = true
   gifElement.setAttribute('href', `/gif?x=${x}&y=${y}&w=${w}&i=${i}`)
+  mp3SmallElement.setAttribute('href', `/zoom?x=${x}&y=${y}&w=${w}&i=${i}`)
   mp4Element.setAttribute('href', `/mp4?x=${x}&y=${y}&w=${w}&i=${i}`)
   mediumElement.setAttribute('href', `/medium?x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.className = 'cursor-busy'
