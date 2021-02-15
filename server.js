@@ -60,10 +60,10 @@ const imgEndPoint = (imgWidth, imgHeight) => async (req, res) => {
   res.redirect(imgPath)
 }
 
-const videoEndPoint = (suffix, imgWidth, imgHeight) => async (req, res) => {
+const videoEndPoint = (suffix, imgWidth, imgHeight, fast = true) => async (req, res) => {
   console.log('video', req.query)
   const { x, y, w, i } = req.query
-  const videoPath = `/cache/${imgWidth}x${imgHeight}_${x}_${y}_${w}_${i}.${suffix}`
+  const videoPath = `/cache/${fast ? '' : 'slow-'}${imgWidth}x${imgHeight}_${x}_${y}_${w}_${i}.${suffix}`
   const videoFileName = `public${videoPath}`
   const inputImagesPath = `public/cache/${imgWidth}x${imgHeight}_${x}_${y}_${w}_${i}.txt`
 
@@ -74,9 +74,12 @@ const videoEndPoint = (suffix, imgWidth, imgHeight) => async (req, res) => {
   }
 
   const videoWs = []
-  let mult = 0.03
-  for (let videoW = w / 10; videoW < 8; videoW *= (1 + mult)) {
-    mult *= 1.005
+  let mult = fast ? 0.03 : 0.02
+  const start = fast ? w / 10 : w
+  for (let videoW = start; videoW < 8; videoW *= (1 + mult)) {
+    if (fast) {
+      mult *= 1.005
+    }
     videoWs.push(videoW)
   }
   if (videoWs.length === 0) {
@@ -146,6 +149,7 @@ const videoEndPoint = (suffix, imgWidth, imgHeight) => async (req, res) => {
 
 app.get('/gif', videoEndPoint('gif', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5))
 app.get('/zoom', videoEndPoint('mp4', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5))
+app.get('/slow-zoom', videoEndPoint('mp4', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5, /* fast= */ false))
 app.get('/mp4', videoEndPoint('mp4', VIDEO_WIDTH, VIDEO_HEIGHT))
 app.get('/hd', imgEndPoint(HD_IMG_WIDTH, HD_IMG_HEIGHT))
 app.get('/medium', imgEndPoint(MEDIUM_IMG_WIDTH, MEDIUM_IMG_HEIGHT))
