@@ -6,6 +6,7 @@
  mp4SmallElement,
  slowMp4SmallElement,
  mp4Element,
+ hdMp4Element,
  mediumElement,
  xElement,
  yElement,
@@ -44,6 +45,7 @@ const doit = () => {
   mp4SmallElement.setAttribute('href', `/zoom?x=${x}&y=${y}&w=${w}&i=${i}`)
   slowMp4SmallElement.setAttribute('href', `/slow-zoom?x=${x}&y=${y}&w=${w}&i=${i}`)
   mp4Element.setAttribute('href', `/mp4?x=${x}&y=${y}&w=${w}&i=${i}`)
+  hdMp4Element.setAttribute('href', `/hd-mp4?x=${x}&y=${y}&w=${w}&i=${i}`)
   mediumElement.setAttribute('href', `/medium?x=${x}&y=${y}&w=${w}&i=${i}`)
   imgElement.className = 'cursor-busy'
   imgElement.setAttribute('src', `/hd?x=${x}&y=${y}&w=${w}&i=${i}`)
