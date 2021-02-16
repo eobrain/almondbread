@@ -4,7 +4,7 @@ Code described in a [blog article][1] that allows you to
 
 1. Explore the Mandelbrot set to find interesting parts of it
 2. Generate images suitable for use as video conferencing backgrounds
-3. Generate zooming videos and animated GIFs
+3. Generate zooming videos and animated GIFs (See examples on [mandelbrot.dev][12])
 
 ## Gallery
 
@@ -36,6 +36,7 @@ For more examples see several articles on [Yak Shavings][2], including exact coo
 [9]: https://eamonn.org/img/mandelbrot_0_0_8_100000.png
 [10]: https://eamonn.org/img/mandelbrot_0.250006_0_1.1920928955078125e-7_1000000.png
 [11]: https://eamonn.org/img/mandelbrot_-1.292628079931202_-0.35266737725997915_7.275957614183426e-12_1000000.png
+[12]: https://mandelbrot.dev
 
 ## Trying it yourself
 
