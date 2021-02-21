@@ -151,7 +151,7 @@ app.get('/gif', videoEndPoint('gif', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5))
 app.get('/zoom', videoEndPoint('mp4', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5))
 app.get('/slow-zoom', videoEndPoint('mp4', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5, /* fast= */ false))
 app.get('/mp4', videoEndPoint('mp4', VIDEO_WIDTH, VIDEO_HEIGHT))
-app.get('/hd-mp4', videoEndPoint('mp4', HD_IMG_WIDTH, HD_IMG_WIDTH, /* fast= */ false))
+app.get('/hd-mp4', videoEndPoint('mp4', HD_IMG_WIDTH, HD_IMG_HEIGHT, /* fast= */ false))
 app.get('/hd', imgEndPoint(HD_IMG_WIDTH, HD_IMG_HEIGHT))
 app.get('/medium', imgEndPoint(MEDIUM_IMG_WIDTH, MEDIUM_IMG_HEIGHT))
 
