@@ -43,19 +43,22 @@ namespace {
 constexpr int INT_MIN = numeric_limits<int>::min();
 constexpr int INT_MAX = numeric_limits<int>::max();
 
+template <typename T>
 struct Params {
   int HD_IMG_WIDTH = 1400;
   int HD_IMG_HEIGHT = 900;
-  double centerRe = -0.5671;
-  double centerIm = -0.56698;
-  double width = 0.2;
+  T centerRe = -0.5671;
+  T centerIm = -0.56698;
+  T width = 0.2;
   int maxIterationCount = 10000;
   const char *outputFileName = "mandelbrot.png";
 };
-ostream &operator<<(ostream &out, const Params &p) {
-  out << "HD_IMG_WIDTH=" << p.HD_IMG_WIDTH << " HD_IMG_HEIGHT=" << p.HD_IMG_HEIGHT
-      << " centerRe=" << p.centerRe << " centerIm=" << p.centerIm
-      << " width=" << p.width << " maxIterationCount=" << p.maxIterationCount
+template <typename T>
+ostream &operator<<(ostream &out, const Params<T> &p) {
+  out << "HD_IMG_WIDTH=" << p.HD_IMG_WIDTH
+      << " HD_IMG_HEIGHT=" << p.HD_IMG_HEIGHT << " centerRe=" << p.centerRe
+      << " centerIm=" << p.centerIm << " width=" << p.width
+      << " maxIterationCount=" << p.maxIterationCount
       << " outputFileName=" << p.outputFileName;
   return out;
 }
@@ -162,7 +165,8 @@ class Image {
     return shade < 0 ? 0 : shade;
   }
 
-  bool writePng(const Params &params) const {
+  template <typename T>
+  bool writePng(const Params<T> &params) const {
     try {
       lodepng::State state;
       lodepng_info_init(&state.info_png);
@@ -248,14 +252,15 @@ array<double, 3> hsv2rgb(double h, double s, double v) {
 
 constexpr unsigned char clamp(int color) { return color >= 255 ? 255 : color; }
 
-int iterations(int maxIterationCount, double cRe, double cIm) {
-  double zRe = 0;
-  double zIm = 0;
-  double zRe2 = 0;
-  double zIm2 = 0;
+template <typename T>
+int iterations(int maxIterationCount, T cRe, T cIm) {
+  T zRe = 0;
+  T zIm = 0;
+  T zRe2 = 0;
+  T zIm2 = 0;
   for (int i = 0; i < maxIterationCount; ++i) {
-    double zReNew = zRe2 - zIm2 + cRe;
-    double zImNew = 2 * zRe * zIm + cIm;
+    T zReNew = zRe2 - zIm2 + cRe;
+    T zImNew = 2 * zRe * zIm + cIm;
     zRe2 = zReNew * zReNew;
     zIm2 = zImNew * zImNew;
     if (zRe2 + zIm2 > 4) {
@@ -267,10 +272,11 @@ int iterations(int maxIterationCount, double cRe, double cIm) {
   return maxIterationCount;
 }
 
-int iterations(const Params &params, int ix, int iy) {
-  double scale = params.width / params.HD_IMG_WIDTH;
-  double cRe = scale * (ix - params.HD_IMG_WIDTH / 2) + params.centerRe;
-  double cIm = scale * (params.HD_IMG_HEIGHT / 2 - iy) + params.centerIm;
+template <typename T>
+int iterations(const Params<T> &params, int ix, int iy) {
+  T scale = params.width / params.HD_IMG_WIDTH;
+  T cRe = scale * (ix - params.HD_IMG_WIDTH / 2) + params.centerRe;
+  T cIm = scale * (params.HD_IMG_HEIGHT / 2 - iy) + params.centerIm;
   return iterations(params.maxIterationCount, cRe, cIm);
 }
 
@@ -298,7 +304,8 @@ void setColor(const Stats &stats, Image *img, int maxIterationCount, int ix,
 
 int threadCount = thread::hardware_concurrency();
 
-void threadWorker(const Params &params, Image *img, int mod) {
+template <typename T>
+void threadWorker(const Params<T> &params, Image *img, int mod) {
   for (int iy = mod; iy < params.HD_IMG_HEIGHT; iy += threadCount)
     for (int ix = 0; ix < params.HD_IMG_WIDTH; ++ix) {
       img->iterations(ix, iy) = iterations(params, ix, iy);
@@ -309,7 +316,7 @@ void threadWorker(const Params &params, Image *img, int mod) {
 }  // namespace
 
 int main(int argc, char *const argv[]) {
-  Params params;
+  Params<long double> params;
 
   int opt;
   while ((opt = getopt(argc, argv, "W:H:x:y:w:i:o:")) != -1) {
@@ -321,13 +328,13 @@ int main(int argc, char *const argv[]) {
         params.HD_IMG_HEIGHT = atoi(optarg);
         break;
       case 'x':
-        params.centerRe = atof(optarg);
+        params.centerRe = strtold(optarg, NULL);
         break;
       case 'y':
-        params.centerIm = atof(optarg);
+        params.centerIm = strtold(optarg, NULL);
         break;
       case 'w':
-        params.width = atof(optarg);
+        params.width = strtold(optarg, NULL);
         break;
       case 'i':
         params.maxIterationCount = atoi(optarg);
@@ -337,7 +344,8 @@ int main(int argc, char *const argv[]) {
         break;
       default: /* '?' */
         cerr << "Usage: " << argv[0]
-             << " -W HD_IMG_WIDTH -H HD_IMG_HEIGHT -x centerReal -y centerImaginary "
+             << " -W HD_IMG_WIDTH -H HD_IMG_HEIGHT -x centerReal -y "
+                "centerImaginary "
                 "-w "
                 "viewportWidth -i iterations"
              << endl
@@ -353,7 +361,7 @@ int main(int argc, char *const argv[]) {
   Stats stats;
   vector<thread> threads;
   for (int mod = 0; mod < threadCount; ++mod) {
-    threads.emplace_back(threadWorker, params, &img, mod);
+    threads.emplace_back(threadWorker<long double>, params, &img, mod);
   }
   for (auto &thread : threads) {
     thread.join();
