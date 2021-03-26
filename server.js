@@ -147,7 +147,7 @@ const videoEndPoint = (suffix, imgWidth, imgHeight, fast = true) => async (req, 
   res.redirect(videoPath)
 }
 
-app.get('/gif', videoEndPoint('gif', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5))
+app.get('/gif', videoEndPoint('gif', VIDEO_WIDTH / 8, VIDEO_HEIGHT / 8))
 app.get('/zoom', videoEndPoint('mp4', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5))
 app.get('/slow-zoom', videoEndPoint('mp4', VIDEO_WIDTH / 5, VIDEO_HEIGHT / 5, /* fast= */ false))
 app.get('/mp4', videoEndPoint('mp4', VIDEO_WIDTH, VIDEO_HEIGHT))

@@ -110,7 +110,7 @@ void addText(lodepng::State *state, const char *key, const string &value) {
 }
 
 // hill-shading parameters
-constexpr double Z_FACTOR = 1;
+constexpr double Z_FACTOR = 0.1;
 constexpr double KERNELSIZE = 1;
 constexpr double ALTITUDE = 45 * M_PI / 180;
 constexpr double AZIMUTH = 135 * M_PI / 180;
@@ -286,16 +286,16 @@ void setColor(const Stats &stats, Image *img, int maxIterationCount, int ix,
               int iy, double shade) {
   int iters = img->iterations(ix, iy);
   if (iters == maxIterationCount) {
-    img->pixel(ix, iy, 0) = 0;
-    img->pixel(ix, iy, 1) = 0;
-    img->pixel(ix, iy, 2) = 0;
+    img->pixel(ix, iy, 0) = 255;
+    img->pixel(ix, iy, 1) = 255;
+    img->pixel(ix, iy, 2) = 255;
     img->pixel(ix, iy, 3) = 255;
     return;
   }
 
   double value = stats.percentile(iters);
   value *= value;
-  auto rgb = hsv2rgb(250 * value, (1 - 3 * value / 4) / 2, (2 + shade) / 3);
+  auto rgb = hsv2rgb(250 * value, 0, (1 + 2 * shade) / 3);
   for (int i = 0; i < 3; ++i) {
     img->pixel(ix, iy, i) = rgb[i] * 256;
   }
