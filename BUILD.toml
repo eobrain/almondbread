@@ -1,10 +1,13 @@
 [serve]
-deps=["mandelbrot"]
+deps=["mandelbrot", "public/cache"]
 exec="node server.js"
 
 [clean-serve]
-deps=["mandelbrot", "clean"]
+deps=["mandelbrot", "public/cache", "clean"]
 exec="node server.js"
+
+["public/cache"]
+exec="mkdir --parents $@"
 
 [clean]
 exec="rm -f public/cache/*"
