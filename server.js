@@ -12,6 +12,13 @@ const { writeFile } = promises
 const app = express()
 const port = 3333
 
+if (process.argv.length !== 3) {
+  console.error(`Expected 3 arguments but got ${process.argv.map((a, i) => `\n  ${i}: "${a}"`)}`)
+  console.error('USAGE: node server.js ./mandelbrot')
+  process.exit(1)
+}
+const executable = process.argv[2]
+
 app.use(express.static('public'))
 
 const execute = (command, args) => new Promise((resolve, reject) => {
@@ -47,7 +54,7 @@ const imgEndPoint = (imgWidth, imgHeight) => async (req, res) => {
     return
   }
   console.log('Generating ', imgFileName)
-  await execute('./mandelbrot', [
+  await execute(executable, [
     '-o', imgFileName,
     '-x', x,
     '-y', y,

@@ -1,10 +1,14 @@
 [serve]
 deps=["mandelbrot", "public/cache"]
-exec="node server.js"
+exec="node server.js ./mandelbrot"
+
+[debug-serve]
+deps=["mandelbrot_debug", "public/cache"]
+exec="node server.js ./mandelbrot_debug"
 
 [clean-serve]
 deps=["mandelbrot", "public/cache", "clean"]
-exec="node server.js"
+exec="node server.js ./mandelbrot"
 
 ["public/cache"]
 exec="mkdir --parents $@"
@@ -32,3 +36,8 @@ exec="g++ -DNDEBUG -O3 -Wall $+ -pthread -o $@"
 deps=["main.cc", "lodepng.cpp"]
 exec="g++ -g -Wall $+ -pthread -o $@"
 
+[docker-build]
+exec="sudo docker build -t eobrain/almondbread ."
+
+[docker-run]
+exec="sudo docker run -p 3333:3333 eobrain/almondbread"
