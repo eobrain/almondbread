@@ -105,6 +105,7 @@ ostream &operator<<(ostream &out, const Stats &s) {
 }
 
 void addText(lodepng::State *state, const char *key, const string &value) {
+  cout << "addText(,\"" << key << "\", \"" << value << "\")" << endl;
   unsigned err = lodepng_add_text(&state->info_png, key, value.c_str());
   if (err) throw err;
 }
@@ -177,8 +178,11 @@ class Image {
       const string title = titleStream.str();
       addText(&state, "Title", title);
 
-      const string author = getenv("USER");
-      addText(&state, "Author", author);
+      const char *maybeAuthor = getenv("USER");
+      if (maybeAuthor) {
+        const string author = maybeAuthor;
+        addText(&state, "Author", author);
+      }
 
       stringstream descriptionStream;
       descriptionStream << "\n\nThis is a view of the Mandelbrot set that is "
@@ -206,9 +210,16 @@ class Image {
       }
       addText(&state, "Source", hostname);
 
-      addText(&state, "Comment",
-              title + "\nCopyright " + copyright + "\nCreated by " + author +
-                  "@" + hostname + " using " + software + ".\n" + description);
+      if (maybeAuthor) {
+        addText(&state, "Comment",
+                title + "\nCopyright " + copyright + "\nCreated by " +
+                    maybeAuthor + "@" + hostname + " using " + software +
+                    ".\n" + description);
+      } else {
+        addText(&state, "Comment",
+                title + "\nCopyright " + copyright + "\nCreated on " +
+                    hostname + " using " + software + ".\n" + description);
+      }
 
       vector<unsigned char> png;
       unsigned err = lodepng::encode(png, _pixels, params.HD_IMG_WIDTH,
