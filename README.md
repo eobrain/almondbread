@@ -40,6 +40,22 @@ For more examples see several articles on [Yak Shavings][2], including exact coo
 
 ## Trying it yourself
 
+### 1(a) - Launch from docker
+
+(No need to clone this repo.)
+
+```sh
+docker run -p 3333:3333 eobrain/almondbread
+```
+
+or possibly you need `sudo`:
+
+```sh
+sudo docker run -p 3333:3333 eobrain/almondbread
+```
+
+### 1(b) - Or launch from this repo
+
 (Only tested on Linux.)
 
 * Prerequisites
@@ -57,6 +73,8 @@ For more examples see several articles on [Yak Shavings][2], including exact coo
     ```sh
     npx bajel
     ```
+
+### And then access by cisiring in browser
 
   * Visit http://localhost:3333/
   * Wait for initial image to load, then click on it to zoom
