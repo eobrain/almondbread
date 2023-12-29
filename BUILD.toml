@@ -40,4 +40,4 @@ exec="g++ -g -Wall $+ -pthread -o $@"
 exec="sudo docker build -t eobrain/almondbread ."
 
 [docker-run]
-exec="sudo docker run -p 3333:3333 eobrain/almondbread"
+exec="sudo docker run -i -p 3333:3333 eobrain/almondbread"
